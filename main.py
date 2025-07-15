@@ -1,14 +1,16 @@
 import pandas as pd
 import streamlit as st
+import plotly.express as px
 import gspread
+from unicodedata import category
 
 # # Replace with your actual sheet ID and name
-# sheet_id = '1thMQ4ndtgzyEM6qfoA2tfrt3MEzZY2CtxhjpCTNcS0U'  # Example: '1mSEJtzy5L0nuIMRlY9rYdC5s899Ptu2gdMJcIalr5pg'
-# sheet_name = 'Content' # Example: 'Data Sheet'
+sheet_id = '1thMQ4ndtgzyEM6qfoA2tfrt3MEzZY2CtxhjpCTNcS0U'  # Example: '1mSEJtzy5L0nuIMRlY9rYdC5s899Ptu2gdMJcIalr5pg'
+sheet_name = 'Content' # Example: 'Data Sheet'
 #
 # # Construct the URL for CSV export
-# csv_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
-csv_url = 'https://docs.google.com/spreadsheets/d/1thMQ4ndtgzyEM6qfoA2tfrt3MEzZY2CtxhjpCTNcS0U/gviz/tq?tqx=out:csv&sheet=Content'
+csv_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
+
 # Read the data into a Pandas DataFrame
 print(csv_url)
 
@@ -25,7 +27,7 @@ startDate = pd.to_datetime(df["Created date"]).min()
 endDate = pd.to_datetime(df["Created date"]).max()
 print(startDate, endDate)
 
-col1, col2 = st.columns((2))
+col1, col2 = st.columns([2,2])
 
 with col1:
     date1 = pd.to_datetime(st.date_input("Start Date", startDate))
@@ -62,13 +64,79 @@ if not day:
 else:
     df4 = df3[df3["Day of the week"].isin(day)]
 
-time = st.sidebar.multiselect("Pick the Time: ", df3["Interval Times"].unique())
+time = st.sidebar.multiselect("Pick the Time: ", df4["Interval Times"].unique())
+
+if not time:
+    df5 = df4.copy()
+
+else:
+    df5 = df4[df4["Interval Times"].isin(time)]
+
+category = st.sidebar.multiselect("Pick the Category", df5["Category"].unique())
+
+if not category:
+    df6 = df5.copy()
+
+else:
+    df6 = df5[df5["Category"].isin(category)]
+
+sub_category = st.sidebar.multiselect("Pick the Sub-Category", df6["Sub-Category"].unique())
+
+if not sub_category:
+    df7 = df6.copy()
+else:
+    df7 = df6[df6["Sub-Category"].isin(sub_category)]
+
+# avg_impressions = df7["Impressions"].mean()
+df["Impressions"].astype(int)
+print(df["Impressions"].mean())
+
+if year:
+    print(year)
+    st.subheader(f"Filtered Data Graph {year[0]}")
+    filtered_df = df[df["Year"].isin(year)]
+    print("no", df2)
+    print(filtered_df)
+    # avg_impressions = year_df["Impressions"].mean().round(0).astype(int)
+    data_year = {
+        "Year": year,
+        "Impressions" : [20000, 300]
+    }
+    fig = px.bar(data_year, x="Year", y="Impressions", text= [i.strftime("%Y") for i in data_year["Year"]], template="seaborn")
+    st.plotly_chart(fig,use_container_width=True, height=500)
+
+
+
+# if not year and not month and not day and not time:
+#     filtered_df = df
+# elif not month and not day and not time:
+#     filtered_df = df[df["Year"].isin(year)]
+# elif not year and not day and not time:
+#     filtered_df = df[df["Month & Year"].isin(month)]
+# elif not year and not month and not time:
+#     filtered_df = df[df["Day of the Week"].isin(day)]
+# elif day and time:
+#     filtered_df = df4[df["Day of the Week"].isin(day) & df4["Interval Times"].isin(time)]
+# elif month and time:
+#     filtered_df = df4[df["Day of the Week"].isin(month) & df4["Interval Times"].isin(time)]
+# elif year and time:
+#     filtered_df = df4[df["Day of the Week"].isin(year) & df4["Interval Times"].isin(time)]
+# else:
+#     filtered_df = df4[df4["Year"].isin(time)]
+
+# category_df = filtered_df.groupby(by = [""]
+# st.subheader("Filtered Data Graph")
+
+
 
 # access = gspread.oauth()
 # sheet_id = "1thMQ4ndtgzyEM6qfoA2tfrt3MEzZY2CtxhjpCTNcS0U"
 # wb = access.open_by_key(sheet_id)
 #
 # sheet = wb.worksheet("Content").get_all_records()
+# df = pd.DataFrame(sheet)
+# print(df.columns)
+# print(df._get_column_array(5))
 # df = pd.DataFrame(sheet)
 # print(df.columns)
 # print(df._get_column_array(5))
