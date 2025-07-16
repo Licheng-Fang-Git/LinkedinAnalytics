@@ -1,6 +1,8 @@
+import datetime
 import pandas as pd
 import streamlit as st
 import plotly.express as px
+import matplotlib.pyplot as plt
 import gspread
 from unicodedata import category
 
@@ -13,7 +15,7 @@ csv_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:cs
 
 # Read the data into a Pandas DataFrame
 print(csv_url)
-
+# Filter the specific warning message
 st.set_page_config(page_title = "Linkedin Analytics!!", page_icon = "📈")
 st.title("📈 Linkedin Analytics Dynamic")
 st.markdown('<style>div.block-container{padding-top:2rem;} </style>', unsafe_allow_html= True)
@@ -21,11 +23,8 @@ st.markdown('<style>div.block-container{padding-top:2rem;} </style>', unsafe_all
 df = pd.read_csv(csv_url)
 print(df.columns)
 df['Created date'] = pd.to_datetime(df['Created date'])
-print(df['Created date'])
-
 startDate = pd.to_datetime(df["Created date"]).min()
 endDate = pd.to_datetime(df["Created date"]).max()
-print(startDate, endDate)
 
 col1, col2 = st.columns([2,2])
 
@@ -38,6 +37,8 @@ with col2:
 df = df[(df["Created date"] >= date1) & (df["Created date"] <= date2)].copy()
 
 st.sidebar.header("Choose your filter: ")
+
+df["Impressions"].astype(int)
 
 # Create for region
 year = st.sidebar.multiselect("Pick the Year: ", df["Year"].unique())
@@ -87,24 +88,28 @@ if not sub_category:
 else:
     df7 = df6[df6["Sub-Category"].isin(sub_category)]
 
-# avg_impressions = df7["Impressions"].mean()
-df["Impressions"].astype(int)
-print(df["Impressions"].mean())
 
 if year:
-    print(year)
     st.subheader(f"Filtered Data Graph {year[0]}")
-    filtered_df = df[df["Year"].isin(year)]
-    print("no", df2)
-    print(filtered_df)
-    # avg_impressions = year_df["Impressions"].mean().round(0).astype(int)
-    data_year = {
-        "Year": year,
-        "Impressions" : [20000, 300]
+    filtered_df = df2.groupby('Year')[['Impressions']].mean().round()
+    data = {
+        "Year" : df2['Year'].unique(),
+        "Impressions" : filtered_df['Impressions'][::-1]
     }
-    fig = px.bar(data_year, x="Year", y="Impressions", text= [i.strftime("%Y") for i in data_year["Year"]], template="seaborn")
-    st.plotly_chart(fig,use_container_width=True, height=500)
+    st.write(f"{data}")
+    fig = px.bar(data, x = "Year", y = "Impressions", template='seaborn')
+    st.plotly_chart(fig, use_container_width=True, height = 200)
 
+if month:
+    st.subheader(f"Filtered Data Graph {month[0]}")
+    filtered_df = df3.groupby('Month & Year')[['Impressions']].mean().round()
+    data = {
+        "Month" : df3['Month & Year'].unique(),
+        "Impressions" : filtered_df['Impressions'][::-1]
+    }
+    st.write(f"{data}")
+    fig = px.bar(data, x = "Month", y = "Impressions", template='seaborn')
+    st.plotly_chart(fig, use_container_width=True, height = 200)
 
 
 # if not year and not month and not day and not time:
@@ -123,10 +128,6 @@ if year:
 #     filtered_df = df4[df["Day of the Week"].isin(year) & df4["Interval Times"].isin(time)]
 # else:
 #     filtered_df = df4[df4["Year"].isin(time)]
-
-# category_df = filtered_df.groupby(by = [""]
-# st.subheader("Filtered Data Graph")
-
 
 
 # access = gspread.oauth()
