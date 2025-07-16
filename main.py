@@ -111,6 +111,29 @@ if month:
     fig = px.bar(data, x = "Month", y = "Impressions", template='seaborn')
     st.plotly_chart(fig, use_container_width=True, height = 200)
 
+if day:
+    st.subheader(f"Filtered Data Graph {day[0]}")
+    filtered_df = df4.groupby('Day of the week')[['Impressions']].mean().round()
+    data = {
+        "Day" : df4['Day of the week'].unique(),
+        "Impressions" : filtered_df['Impressions'][::-1]
+    }
+    st.write(f"{data}")
+    fig = px.bar(data, x = "Day", y = "Impressions", template='seaborn')
+    st.plotly_chart(fig, use_container_width=True, height = 200)
+
+if time:
+    st.subheader(f"Time of Post")
+    filtered_df = df5.groupby('Interval Times')[['Impressions']].mean().round()
+    data = {
+        "Time" : df5['Interval Times'].unique(),
+        "Impressions" : filtered_df['Impressions'][::-1]
+    }
+    st.write(f"{data}")
+    fig = px.bar(data, x = "Time", y = "Impressions", template='seaborn')
+    st.plotly_chart(fig, use_container_width=True, height = 200)
+
+
 
 # if not year and not month and not day and not time:
 #     filtered_df = df
