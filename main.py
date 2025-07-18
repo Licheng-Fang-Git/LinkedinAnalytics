@@ -12,13 +12,12 @@ follower_sheet = 'Sheet24'
 content_csv_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={content_sheet_name}'
 follower_csv_url =  f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={follower_sheet}'
 
-st.set_page_config(page_title = "Linkedin Analytics!!", page_icon = "📈")
+st.set_page_config(page_title = "LinkedIn Analytics!!", page_icon = "📈")
 st.title("📈 Linkedin Analytics Dynamic")
 st.markdown('<style>div.block-container{padding-top:2rem;} </style>', unsafe_allow_html= True)
 
 tab1, tab2 = st.tabs(["Default Information", "Filtered Data"])
 
-print(follower_csv_url)
 df = pd.read_csv(content_csv_url)
 follower_df = pd.read_csv(follower_csv_url)
 
@@ -28,7 +27,6 @@ startDate = pd.to_datetime(df["Created date"]).min()
 endDate = pd.to_datetime(df["Created date"]).max()
 
 with tab1:
-    print("Whats up")
     st.subheader("Total Follower")
     filtered_df = follower_df.groupby('Month/Yr')[['Follower Count']].sum()
     data = {
@@ -36,9 +34,8 @@ with tab1:
         "Follower": follower_df['Follower Count']
     }
     follower_df = pd.DataFrame(data)
-    # fig = px.line(follower_df, x="Month/Yr", y="Follower", title="Growth Overtime", template='seaborn')
-    # st.plotly_chart(fig, use_container_width=True, height=1000)
-    st.line_chart(follower_df['Month/Yr'])
+    fig = px.line(follower_df, x="Month/Yr", y="Follower", title="Growth Overtime")
+    st.plotly_chart(fig, use_container_width=True, height=1000)
 
 with tab2:
     col1, col2 = st.columns([2, 2])
@@ -104,8 +101,7 @@ with tab2:
     df["Impressions"].astype(int)
 
     if year:
-
-        st.subheader(f"Filtered Data Graph {year[0]}")
+        st.subheader(f"Year's Bar Chart")
         filtered_df = df2.groupby('Year')[['Impressions']].mean().round()
         data = {
             "Year" : df2['Year'].unique(),
@@ -113,38 +109,82 @@ with tab2:
         }
         fig = px.bar(data, x = "Year", y = "Impressions", template='seaborn')
         st.plotly_chart(fig, use_container_width=True, height = 200)
+        st.dataframe(data)
 
     if month:
-        st.subheader(f"Filtered Data Graph {month[0]}")
+        st.subheader(f"Month's Bar Chart")
+        group_keys = list(df3.groupby('Month & Year').groups.keys())
         filtered_df = df3.groupby('Month & Year')[['Impressions']].mean().round()
+        filtered_df.insert(0, "Month", group_keys)
+        specific_num = filtered_df.loc[filtered_df['Month'] == group_keys[0]]['Impressions'].values[0]
+        match_data = {i: filtered_df.loc[filtered_df['Month'] == i]['Impressions'].values[0] for i in group_keys}
         data = {
-            "Month" : df3['Month & Year'].unique(),
-            "Impressions" : filtered_df['Impressions'][::-1]
+            "Month" : match_data.keys(),
+            "Impressions" : match_data.values()
         }
         fig = px.bar(data, x = "Month", y = "Impressions", template='seaborn')
         st.plotly_chart(fig, use_container_width=True, height = 200)
+        st.dataframe(data)
 
     if day:
-        st.subheader(f"Filtered Data Graph {day[0]}")
+        st.subheader(f"Day Bar Chart")
+        group_keys = list(df4.groupby('Day of the week').groups.keys())
         filtered_df = df4.groupby('Day of the week')[['Impressions']].mean().round()
+        filtered_df.insert(0, "Day", group_keys)
+        specific_num = filtered_df.loc[filtered_df['Day'] == group_keys[0]]['Impressions'].values[0]
+        match_data = {i: filtered_df.loc[filtered_df['Day'] == i]['Impressions'].values[0] for i in group_keys}
         data = {
-            "Day" : df4['Day of the week'].unique(),
-            "Impressions" : filtered_df['Impressions'][::-1]
+            "Day" : match_data.keys(),
+            "Impressions" : match_data.values()
         }
         fig = px.bar(data, x = "Day", y = "Impressions", template='seaborn')
         st.plotly_chart(fig, use_container_width=True, height = 200)
+        st.dataframe(data)
 
     if time:
-        st.subheader(f"Time of Post")
+        st.subheader(f"Time of Post Chart")
+        group_keys = list(df5.groupby('Interval Times').groups.keys())
         filtered_df = df5.groupby('Interval Times')[['Impressions']].mean().round()
+        filtered_df.insert(0, "Time", group_keys)
+        specific_num = filtered_df.loc[filtered_df['Time'] == group_keys[0]]['Impressions'].values[0]
+        match_data = { i:filtered_df.loc[filtered_df['Time'] == i]['Impressions'].values[0] for i in group_keys}
         data = {
-            "Time" : df5['Interval Times'].unique(),
-            "Impressions" : filtered_df['Impressions'][::-1]
+            "Time" : match_data.keys(),
+            "Impressions" : match_data.values()
         }
-        fig = px.bar(data, x = "Time", y = "Impressions", template='seaborn')
-        st.plotly_chart(fig, use_container_width=True, height = 200)
+        fig = px.bar(data, x="Time", y="Impressions", template='seaborn')
+        st.plotly_chart(fig, use_container_width=True, height=200)
+        st.dataframe(data)
 
+    if category:
+        st.subheader(f"Category Chart")
+        group_keys = list(df6.groupby('Category').groups.keys())
+        filtered_df = df6.groupby('Category')[['Impressions']].mean().round()
+        filtered_df.insert(0, "Category", group_keys)
+        specific_num = filtered_df.loc[filtered_df['Category'] == group_keys[0]]['Impressions'].values[0]
+        match_data = { i:filtered_df.loc[filtered_df['Category'] == i]['Impressions'].values[0] for i in group_keys}
+        data = {
+            "Category": match_data.keys(),
+            "Impressions": match_data.values()
+        }
+        fig = px.bar(data, x="Category", y="Impressions", template='seaborn')
+        st.plotly_chart(fig, use_container_width=True, height=200)
+        st.dataframe(data)
 
+    if sub_category:
+        st.subheader(f"Sub-Category Chart")
+        group_keys = list(df7.groupby('Sub-Category').groups.keys())
+        filtered_df = df7.groupby('Sub-Category')[['Impressions']].mean().round()
+        filtered_df.insert(0, "Sub-Category", group_keys)
+        specific_num = filtered_df.loc[filtered_df['Sub-Category'] == group_keys[0]]['Impressions'].values[0]
+        match_data = {i: filtered_df.loc[filtered_df['Sub-Category'] == i]['Impressions'].values[0] for i in group_keys}
+        data = {
+            "Sub-Category": match_data.keys(),
+            "Impressions": match_data.values()
+        }
+        fig = px.bar(data, x="Sub-Category", y="Impressions", template='seaborn')
+        st.plotly_chart(fig, use_container_width=True, height=200)
+        st.dataframe(data)
 
 # if not year and not month and not day and not time:
 #     filtered_df = df
