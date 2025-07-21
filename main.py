@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 import gspread
+import plotly.graph_objects as go
 
 # # Replace with your actual sheet ID and name
 sheet_id = '1thMQ4ndtgzyEM6qfoA2tfrt3MEzZY2CtxhjpCTNcS0U'  # Example: '1mSEJtzy5L0nuIMRlY9rYdC5s899Ptu2gdMJcIalr5pg'
@@ -34,8 +35,9 @@ with tab1:
         "Follower": follower_df['Follower Count']
     }
     follower_df = pd.DataFrame(data)
-    fig = px.line(follower_df, x="Month/Yr", y="Follower", title="Growth Overtime")
-    st.plotly_chart(fig, use_container_width=True, height=1000)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=data['Month/Yr'], y=follower_df['Follower'], name='Follower Count'))
+    st.plotly_chart(fig, picker=True, use_container_width=True, theme = None, height=1500)
 
 with tab2:
     col1, col2 = st.columns([2, 2])
@@ -100,27 +102,43 @@ with tab2:
     # avg_impressions = df7["Impressions"].mean()
     df["Impressions"].astype(int)
 
+    emoji = st.sidebar.multiselect("Pick the Emoji", df["Type Emoji"].unique())
+    if not emoji:
+        df8 = df7.copy()
+    else:
+        df8 = df7[df7["Type Emoji"].isin(emoji)]
+
+
     if year:
         st.subheader(f"Year's Bar Chart")
         filtered_df = df2.groupby('Year')[['Impressions']].mean().round()
+        post_count = df2['Year'].value_counts()
+
         data = {
             "Year" : df2['Year'].unique(),
+            "Number of Posts" : list(post_count),
             "Impressions" : filtered_df['Impressions'][::-1]
         }
         fig = px.bar(data, x = "Year", y = "Impressions", template='seaborn')
         st.plotly_chart(fig, use_container_width=True, height = 200)
+
         st.dataframe(data)
 
     if month:
         st.subheader(f"Month's Bar Chart")
         group_keys = list(df3.groupby('Month & Year').groups.keys())
         filtered_df = df3.groupby('Month & Year')[['Impressions']].mean().round()
+        post_count = list(df3['Month & Year'].value_counts())
         filtered_df.insert(0, "Month", group_keys)
-        specific_num = filtered_df.loc[filtered_df['Month'] == group_keys[0]]['Impressions'].values[0]
-        match_data = {i: filtered_df.loc[filtered_df['Month'] == i]['Impressions'].values[0] for i in group_keys}
+        filtered_df.insert(1, "Post Count", post_count)
+        # specific_num = filtered_df.loc[filtered_df['Month'] == group_keys[0]]['Number of Posts'].values[0]
+        match_data = {i: [filtered_df.loc[filtered_df['Month'] == i]['Post Count'].values[0], filtered_df.loc[filtered_df['Month'] == i]['Impressions'].values[0]] for i in group_keys}
+        print("Helllo")
+        print(match_data.values())
         data = {
             "Month" : match_data.keys(),
-            "Impressions" : match_data.values()
+            "Number of Posts" : match_data.values()[0],
+            "Impressions" : match_data.values()[1]
         }
         fig = px.bar(data, x = "Month", y = "Impressions", template='seaborn')
         st.plotly_chart(fig, use_container_width=True, height = 200)
@@ -133,8 +151,10 @@ with tab2:
         filtered_df.insert(0, "Day", group_keys)
         specific_num = filtered_df.loc[filtered_df['Day'] == group_keys[0]]['Impressions'].values[0]
         match_data = {i: filtered_df.loc[filtered_df['Day'] == i]['Impressions'].values[0] for i in group_keys}
+        post_count = df4['Day of the week'].value_counts()
         data = {
             "Day" : match_data.keys(),
+            "Number of Posts": list(post_count),
             "Impressions" : match_data.values()
         }
         fig = px.bar(data, x = "Day", y = "Impressions", template='seaborn')
@@ -148,8 +168,10 @@ with tab2:
         filtered_df.insert(0, "Time", group_keys)
         specific_num = filtered_df.loc[filtered_df['Time'] == group_keys[0]]['Impressions'].values[0]
         match_data = { i:filtered_df.loc[filtered_df['Time'] == i]['Impressions'].values[0] for i in group_keys}
+        post_count = df5['Interval Times'].value_counts()
         data = {
             "Time" : match_data.keys(),
+            "Number of Posts": list(post_count),
             "Impressions" : match_data.values()
         }
         fig = px.bar(data, x="Time", y="Impressions", template='seaborn')
@@ -163,8 +185,10 @@ with tab2:
         filtered_df.insert(0, "Category", group_keys)
         specific_num = filtered_df.loc[filtered_df['Category'] == group_keys[0]]['Impressions'].values[0]
         match_data = { i:filtered_df.loc[filtered_df['Category'] == i]['Impressions'].values[0] for i in group_keys}
+        post_count = df6['Category'].value_counts()
         data = {
             "Category": match_data.keys(),
+            "Number of Posts": list(post_count),
             "Impressions": match_data.values()
         }
         fig = px.bar(data, x="Category", y="Impressions", template='seaborn')
@@ -178,13 +202,34 @@ with tab2:
         filtered_df.insert(0, "Sub-Category", group_keys)
         specific_num = filtered_df.loc[filtered_df['Sub-Category'] == group_keys[0]]['Impressions'].values[0]
         match_data = {i: filtered_df.loc[filtered_df['Sub-Category'] == i]['Impressions'].values[0] for i in group_keys}
+        post_count = df7['Sub-Category'].value_counts()
         data = {
             "Sub-Category": match_data.keys(),
+            "Number of Posts": list(post_count),
             "Impressions": match_data.values()
         }
         fig = px.bar(data, x="Sub-Category", y="Impressions", template='seaborn')
         st.plotly_chart(fig, use_container_width=True, height=200)
         st.dataframe(data)
+
+    if emoji:
+        st.subheader(f"Emoji Chart")
+        group_keys = list(df8.groupby('Type Emoji').groups.keys())
+        filtered_df = df8.groupby('Type Emoji')[['Impressions']].mean().round()
+        filtered_df.insert(0, "Type Emoji", group_keys)
+        specific_num = filtered_df.loc[filtered_df['Type Emoji'] == group_keys[0]]['Impressions'].values[0]
+        match_data = {i: filtered_df.loc[filtered_df['Type Emoji'] == i]['Impressions'].values[0] for i in group_keys}
+        post_count = df8['Type Emoji'].value_counts()
+        data = {
+            "Type Emoji": match_data.keys(),
+            "Number of Posts": list(post_count),
+            "Impressions": match_data.values()
+        }
+        fig = px.bar(data, x="Type Emoji", y="Impressions", template='seaborn')
+        st.plotly_chart(fig, use_container_width=True, height=200)
+        st.dataframe(data)
+
+
 
 # if not year and not month and not day and not time:
 #     filtered_df = df
