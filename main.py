@@ -3,6 +3,7 @@ import streamlit as st
 import plotly.express as px
 import gspread
 import plotly.graph_objects as go
+from streamlit import sidebar
 from streamlit_plotly_events import plotly_events
 
 # # Replace with your actual sheet ID and name
@@ -14,8 +15,10 @@ follower_sheet = 'Sheet24'
 content_csv_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={content_sheet_name}'
 follower_csv_url =  f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={follower_sheet}'
 
+
+st.logo('trillium_logo.png', link='https://www.trlm.com/', size='large', icon_image='trillium_trading_logo.png')
 st.set_page_config(page_title = "LinkedIn Analytics!!", page_icon = "📈")
-st.title("📈 Linkedin Analytics Dynamic")
+st.title("📈 Linkedin Analytics")
 st.markdown('<style>div.block-container{padding-top:2rem;} </style>', unsafe_allow_html= True)
 
 tab1, tab2 = st.tabs(["Default Information", "Filtered Data"])
@@ -35,10 +38,25 @@ with tab1:
         "Month/Yr": pd.to_datetime(follower_df['Date']),
         "Follower": follower_df['Follower Count']
     }
-    follower_df = pd.DataFrame(data)
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=data['Month/Yr'], y=follower_df['Follower'], name='Follower Count'))
+    fig.add_trace(go.Scatter(x=data['Month/Yr'], y=data['Follower'], name='Follower Count'))
     st.plotly_chart(fig, picker=True, use_container_width=True, theme = None, height=1500)
+
+    st.badge("New")
+    st.subheader("Posting Frequency")
+    print(df['Month & Year'].unique()[::-1])
+    post_count = df['Month & Year'].value_counts().sort_index()
+    match_data = { month : post_count[month] for month in list(df['Month & Year'].unique())[::-1]}
+    data = {
+        "Month/Yr": list(match_data.keys()),
+        "Number of Post": list(match_data.values())
+    }
+    print(data)
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=data['Month/Yr'], y=data['Number of Post'], name='Post Frequency'))
+    st.plotly_chart(fig, picker=True, use_container_width=True, theme = None, height=1500)
+    st.dataframe(data)
 
 with tab2:
     col1, col2 = st.columns([2, 2])
@@ -100,170 +118,76 @@ with tab2:
     else:
         df7 = df6[df6["Sub-Category"].isin(sub_category)]
 
-    # avg_impressions = df7["Impressions"].mean()
-    df["Impressions"].astype(int)
-
     emoji = st.sidebar.multiselect("Pick the Emoji", df["Type Emoji"].unique())
     if not emoji:
         df8 = df7.copy()
     else:
         df8 = df7[df7["Type Emoji"].isin(emoji)]
 
+    df["Impressions"].astype(int)
 
-    if year:
-        st.subheader(f"Year's Bar Chart")
-        filtered_df = df2.groupby('Year')[['Impressions']].mean().round()
-        post_count = df2['Year'].value_counts()
-
-        data = {
-            "Year" : df2['Year'].unique(),
-            "Number of Posts" : list(post_count),
-            "Impressions" : filtered_df['Impressions'][::-1]
-        }
-        fig = px.bar(data, x = "Year", y = "Impressions", template='seaborn')
-        st.plotly_chart(fig, use_container_width=True, height = 200)
-
-        st.dataframe(data)
-
-    if month:
-        st.subheader(f"Month's Bar Chart")
-        group_keys = list(df3.groupby('Month & Year').groups.keys())
-        filtered_df = df3.groupby('Month & Year')[['Impressions']].mean().round()
-        post_count = list(df3.groupby('Month & Year')['Number of Post'].sum())
-        filtered_df.insert(0, "Month", group_keys)
-        filtered_df.insert(1, "Post Count", post_count)
-        organize_month = []
-        organize_number_posts = []
-        organize_impressions = []
-        for i in group_keys:
-            organize_month.append(i)
-            organize_number_posts.append(filtered_df.loc[filtered_df['Month'] == i]['Post Count'].values[0])
-            organize_impressions.append(filtered_df.loc[filtered_df['Month'] == i]['Impressions'].values[0])
-        data = {
-            "Month" : organize_month,
-            "Number of Posts" : organize_number_posts,
-            "Impressions" : organize_impressions
-        }
-        fig = px.bar(data, x = "Month", y = "Impressions", template='seaborn')
-        st.plotly_chart(fig, use_container_width=True, height = 200)
-        st.dataframe(data)
-
-    if day:
-        st.subheader(f"Day Bar Chart")
-        group_keys = list(df4.groupby('Day of the week').groups.keys())
-        filtered_df = df4.groupby('Day of the week')[['Impressions']].mean().round()
-        post_count = list(df4.groupby('Day of the week')['Number of Post'].sum())
-        filtered_df.insert(0, "Day", group_keys)
-        filtered_df.insert(1, "Post Count", post_count)
-        organize_day = []
-        organize_number_posts = []
-        organize_impressions = []
-        for i in group_keys:
-            organize_day.append(i)
-            organize_number_posts.append(filtered_df.loc[filtered_df['Day'] == i]['Post Count'].values[0])
-            organize_impressions.append(filtered_df.loc[filtered_df['Day'] == i]['Impressions'].values[0])
-        data = {
-            "Day" : organize_day,
-            "Number of Posts": organize_number_posts,
-            "Impressions" : organize_impressions
-        }
-
-        fig = px.bar(data, x = "Day", y = "Impressions", template='seaborn')
-        st.plotly_chart(fig, use_container_width=True, height = 200)
-        st.dataframe(data)
-
-    if time:
-        st.subheader(f"Time of Post Chart")
-        group_keys = list(df5.groupby('Interval Times').groups.keys())
-        filtered_df = df5.groupby('Interval Times')[['Impressions']].mean().round()
-        post_count = list(df5.groupby('Interval Times')['Number of Post'].sum())
-        filtered_df.insert(0, "Time", group_keys)
+    def create_chart(category, aggregate, dataframe ):
+        group_keys = list(dataframe.groupby(category).groups.keys())
+        filtered_df = dataframe.groupby(category)[['Impressions']].mean().round()
+        post_count = list(dataframe.groupby(category)['Number of Post'].sum())
+        filtered_df.insert(0, category, group_keys)
         filtered_df.insert(1, "Post Count", post_count)
         organize_time = []
         organize_number_posts = []
         organize_impressions = []
         for i in group_keys:
             organize_time.append(i)
-            organize_number_posts.append(filtered_df.loc[filtered_df['Time'] == i]['Post Count'].values[0])
-            organize_impressions.append(filtered_df.loc[filtered_df['Time'] == i]['Impressions'].values[0])
+            organize_number_posts.append(filtered_df.loc[filtered_df[category] == i]['Post Count'].values[0])
+            organize_impressions.append(filtered_df.loc[filtered_df[category] == i]['Impressions'].values[0])
         data = {
-            "Time" : organize_time,
+            category : organize_time,
             "Number of Posts": organize_number_posts,
             "Impressions" : organize_impressions
         }
-        fig = px.bar(data, x="Time", y="Impressions", template='seaborn')
-        print(st.plotly_chart(fig, use_container_width=True, height=200, on_select="rerun"))
+        fig = px.bar(data, x=category, y="Impressions", template='seaborn')
+        selected_bar = st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun')
         st.dataframe(data)
+        st.badge("New")
+        if selected_bar:
+            if selected_bar['selection']['points']:
+
+                post_data = {
+                    "Post Title" : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Post title']),
+                    "Link" : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Post link']),
+                    "Date Posted" : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Created date'].dt.date)
+                }
+
+                st.dataframe(post_data, use_container_width=True)
+
+
+
+    if year:
+        st.subheader(f"Year's Bar Chart")
+        create_chart('Year', 'Impressions', df2)
+
+    if month:
+        st.subheader(f"Month's Bar Chart")
+        create_chart('Month & Year', 'Impressions', df3)
+
+    if day:
+        st.subheader(f"Day Bar Chart")
+        create_chart('Day of the week', 'Impressions', df4)
+
+    if time:
+        st.subheader(f"Time of Post Chart")
+        create_chart('Interval Times', 'Impressions', df5)
 
     if category:
         st.subheader(f"Category Chart")
-        group_keys = list(df6.groupby('Category').groups.keys())
-        filtered_df = df6.groupby('Category')[['Impressions']].mean().round()
-        post_count = list(df6.groupby('Category')['Number of Post'].sum())
-        filtered_df.insert(0, "Category", group_keys)
-        filtered_df.insert(1, "Post Count", post_count)
-        organize_category = []
-        organize_number_posts = []
-        organize_impressions = []
-        for i in group_keys:
-            organize_category.append(i)
-            organize_number_posts.append(filtered_df.loc[filtered_df['Category'] == i]['Post Count'].values[0])
-            organize_impressions.append(filtered_df.loc[filtered_df['Category'] == i]['Impressions'].values[0])
-        data = {
-            "Category": organize_category,
-            "Number of Posts": organize_number_posts,
-            "Impressions": organize_impressions
-        }
-        fig = px.bar(data, x="Category", y="Impressions", template='seaborn')
-        st.plotly_chart(fig, use_container_width=True, height=200)
-        st.dataframe(data)
+        create_chart('Category', 'Impressions', df6)
 
     if sub_category:
         st.subheader(f"Sub-Category Chart")
-        group_keys = list(df7.groupby('Sub-Category').groups.keys())
-        filtered_df = df7.groupby('Sub-Category')[['Impressions']].mean().round()
-        post_count = list(df7.groupby('Sub-Category')['Number of Post'].sum())
-        filtered_df.insert(0, "Sub-Category", group_keys)
-        filtered_df.insert(1, "Post Count", post_count)
-        organize_subcategory = []
-        organize_number_posts = []
-        organize_impressions = []
-        for i in group_keys:
-            organize_subcategory.append(i)
-            organize_number_posts.append(filtered_df.loc[filtered_df['Sub-Category'] == i]['Post Count'].values[0])
-            organize_impressions.append(filtered_df.loc[filtered_df['Sub-Category'] == i]['Impressions'].values[0])
-        data = {
-            "Sub-Category": organize_subcategory,
-            "Number of Posts": organize_number_posts,
-            "Impressions": organize_impressions
-        }
-        fig = px.bar(data, x="Sub-Category", y="Impressions", template='seaborn')
-        st.plotly_chart(fig, use_container_width=True, height=200)
-        st.dataframe(data)
+        create_chart('Sub-Category', 'Impressions', df7)
 
     if emoji:
         st.subheader(f"Emoji Chart")
-        group_keys = list(df8.groupby('Type Emoji').groups.keys())
-        filtered_df = df8.groupby('Type Emoji')[['Impressions']].mean().round()
-        post_count = list(df8.groupby('Type Emoji')['Number of Post'].sum())
-        filtered_df.insert(0, "Type Emoji", group_keys)
-        filtered_df.insert(1, "Post Count", post_count)
-        organize_emoji = []
-        organize_number_posts = []
-        organize_impressions = []
-        for i in group_keys:
-            organize_emoji.append(i)
-            organize_number_posts.append(filtered_df.loc[filtered_df['Type Emoji'] == i]['Post Count'].values[0])
-            organize_impressions.append(filtered_df.loc[filtered_df['Type Emoji'] == i]['Impressions'].values[0])
-        data = {
-            "Type Emoji": organize_emoji,
-            "Number of Posts": organize_number_posts,
-            "Impressions": organize_impressions
-        }
-        fig = px.bar(data, x="Type Emoji", y="Impressions", template='seaborn')
-        st.plotly_chart(fig, use_container_width=True, height=200)
-        st.dataframe(data)
-
+        create_chart('Type Emoji', 'Impressions', df8)
 
 
 # if not year and not month and not day and not time:
