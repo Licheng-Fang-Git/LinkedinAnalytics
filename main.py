@@ -3,6 +3,7 @@ import streamlit as st
 import plotly.express as px
 import gspread
 import plotly.graph_objects as go
+from streamlit_plotly_events import plotly_events
 
 # # Replace with your actual sheet ID and name
 sheet_id = '1thMQ4ndtgzyEM6qfoA2tfrt3MEzZY2CtxhjpCTNcS0U'  # Example: '1mSEJtzy5L0nuIMRlY9rYdC5s899Ptu2gdMJcIalr5pg'
@@ -128,17 +129,20 @@ with tab2:
         st.subheader(f"Month's Bar Chart")
         group_keys = list(df3.groupby('Month & Year').groups.keys())
         filtered_df = df3.groupby('Month & Year')[['Impressions']].mean().round()
-        post_count = list(df3['Month & Year'].value_counts())
+        post_count = list(df3.groupby('Month & Year')['Number of Post'].sum())
         filtered_df.insert(0, "Month", group_keys)
         filtered_df.insert(1, "Post Count", post_count)
-        # specific_num = filtered_df.loc[filtered_df['Month'] == group_keys[0]]['Number of Posts'].values[0]
-        match_data = {i: [filtered_df.loc[filtered_df['Month'] == i]['Post Count'].values[0], filtered_df.loc[filtered_df['Month'] == i]['Impressions'].values[0]] for i in group_keys}
-        print("Helllo")
-        print(match_data.values())
+        organize_month = []
+        organize_number_posts = []
+        organize_impressions = []
+        for i in group_keys:
+            organize_month.append(i)
+            organize_number_posts.append(filtered_df.loc[filtered_df['Month'] == i]['Post Count'].values[0])
+            organize_impressions.append(filtered_df.loc[filtered_df['Month'] == i]['Impressions'].values[0])
         data = {
-            "Month" : match_data.keys(),
-            "Number of Posts" : match_data.values()[0],
-            "Impressions" : match_data.values()[1]
+            "Month" : organize_month,
+            "Number of Posts" : organize_number_posts,
+            "Impressions" : organize_impressions
         }
         fig = px.bar(data, x = "Month", y = "Impressions", template='seaborn')
         st.plotly_chart(fig, use_container_width=True, height = 200)
@@ -148,15 +152,22 @@ with tab2:
         st.subheader(f"Day Bar Chart")
         group_keys = list(df4.groupby('Day of the week').groups.keys())
         filtered_df = df4.groupby('Day of the week')[['Impressions']].mean().round()
+        post_count = list(df4.groupby('Day of the week')['Number of Post'].sum())
         filtered_df.insert(0, "Day", group_keys)
-        specific_num = filtered_df.loc[filtered_df['Day'] == group_keys[0]]['Impressions'].values[0]
-        match_data = {i: filtered_df.loc[filtered_df['Day'] == i]['Impressions'].values[0] for i in group_keys}
-        post_count = df4['Day of the week'].value_counts()
+        filtered_df.insert(1, "Post Count", post_count)
+        organize_day = []
+        organize_number_posts = []
+        organize_impressions = []
+        for i in group_keys:
+            organize_day.append(i)
+            organize_number_posts.append(filtered_df.loc[filtered_df['Day'] == i]['Post Count'].values[0])
+            organize_impressions.append(filtered_df.loc[filtered_df['Day'] == i]['Impressions'].values[0])
         data = {
-            "Day" : match_data.keys(),
-            "Number of Posts": list(post_count),
-            "Impressions" : match_data.values()
+            "Day" : organize_day,
+            "Number of Posts": organize_number_posts,
+            "Impressions" : organize_impressions
         }
+
         fig = px.bar(data, x = "Day", y = "Impressions", template='seaborn')
         st.plotly_chart(fig, use_container_width=True, height = 200)
         st.dataframe(data)
@@ -165,31 +176,43 @@ with tab2:
         st.subheader(f"Time of Post Chart")
         group_keys = list(df5.groupby('Interval Times').groups.keys())
         filtered_df = df5.groupby('Interval Times')[['Impressions']].mean().round()
+        post_count = list(df5.groupby('Interval Times')['Number of Post'].sum())
         filtered_df.insert(0, "Time", group_keys)
-        specific_num = filtered_df.loc[filtered_df['Time'] == group_keys[0]]['Impressions'].values[0]
-        match_data = { i:filtered_df.loc[filtered_df['Time'] == i]['Impressions'].values[0] for i in group_keys}
-        post_count = df5['Interval Times'].value_counts()
+        filtered_df.insert(1, "Post Count", post_count)
+        organize_time = []
+        organize_number_posts = []
+        organize_impressions = []
+        for i in group_keys:
+            organize_time.append(i)
+            organize_number_posts.append(filtered_df.loc[filtered_df['Time'] == i]['Post Count'].values[0])
+            organize_impressions.append(filtered_df.loc[filtered_df['Time'] == i]['Impressions'].values[0])
         data = {
-            "Time" : match_data.keys(),
-            "Number of Posts": list(post_count),
-            "Impressions" : match_data.values()
+            "Time" : organize_time,
+            "Number of Posts": organize_number_posts,
+            "Impressions" : organize_impressions
         }
         fig = px.bar(data, x="Time", y="Impressions", template='seaborn')
-        st.plotly_chart(fig, use_container_width=True, height=200)
+        print(st.plotly_chart(fig, use_container_width=True, height=200, on_select="rerun"))
         st.dataframe(data)
 
     if category:
         st.subheader(f"Category Chart")
         group_keys = list(df6.groupby('Category').groups.keys())
         filtered_df = df6.groupby('Category')[['Impressions']].mean().round()
+        post_count = list(df6.groupby('Category')['Number of Post'].sum())
         filtered_df.insert(0, "Category", group_keys)
-        specific_num = filtered_df.loc[filtered_df['Category'] == group_keys[0]]['Impressions'].values[0]
-        match_data = { i:filtered_df.loc[filtered_df['Category'] == i]['Impressions'].values[0] for i in group_keys}
-        post_count = df6['Category'].value_counts()
+        filtered_df.insert(1, "Post Count", post_count)
+        organize_category = []
+        organize_number_posts = []
+        organize_impressions = []
+        for i in group_keys:
+            organize_category.append(i)
+            organize_number_posts.append(filtered_df.loc[filtered_df['Category'] == i]['Post Count'].values[0])
+            organize_impressions.append(filtered_df.loc[filtered_df['Category'] == i]['Impressions'].values[0])
         data = {
-            "Category": match_data.keys(),
-            "Number of Posts": list(post_count),
-            "Impressions": match_data.values()
+            "Category": organize_category,
+            "Number of Posts": organize_number_posts,
+            "Impressions": organize_impressions
         }
         fig = px.bar(data, x="Category", y="Impressions", template='seaborn')
         st.plotly_chart(fig, use_container_width=True, height=200)
@@ -199,14 +222,20 @@ with tab2:
         st.subheader(f"Sub-Category Chart")
         group_keys = list(df7.groupby('Sub-Category').groups.keys())
         filtered_df = df7.groupby('Sub-Category')[['Impressions']].mean().round()
+        post_count = list(df7.groupby('Sub-Category')['Number of Post'].sum())
         filtered_df.insert(0, "Sub-Category", group_keys)
-        specific_num = filtered_df.loc[filtered_df['Sub-Category'] == group_keys[0]]['Impressions'].values[0]
-        match_data = {i: filtered_df.loc[filtered_df['Sub-Category'] == i]['Impressions'].values[0] for i in group_keys}
-        post_count = df7['Sub-Category'].value_counts()
+        filtered_df.insert(1, "Post Count", post_count)
+        organize_subcategory = []
+        organize_number_posts = []
+        organize_impressions = []
+        for i in group_keys:
+            organize_subcategory.append(i)
+            organize_number_posts.append(filtered_df.loc[filtered_df['Sub-Category'] == i]['Post Count'].values[0])
+            organize_impressions.append(filtered_df.loc[filtered_df['Sub-Category'] == i]['Impressions'].values[0])
         data = {
-            "Sub-Category": match_data.keys(),
-            "Number of Posts": list(post_count),
-            "Impressions": match_data.values()
+            "Sub-Category": organize_subcategory,
+            "Number of Posts": organize_number_posts,
+            "Impressions": organize_impressions
         }
         fig = px.bar(data, x="Sub-Category", y="Impressions", template='seaborn')
         st.plotly_chart(fig, use_container_width=True, height=200)
@@ -216,14 +245,20 @@ with tab2:
         st.subheader(f"Emoji Chart")
         group_keys = list(df8.groupby('Type Emoji').groups.keys())
         filtered_df = df8.groupby('Type Emoji')[['Impressions']].mean().round()
+        post_count = list(df8.groupby('Type Emoji')['Number of Post'].sum())
         filtered_df.insert(0, "Type Emoji", group_keys)
-        specific_num = filtered_df.loc[filtered_df['Type Emoji'] == group_keys[0]]['Impressions'].values[0]
-        match_data = {i: filtered_df.loc[filtered_df['Type Emoji'] == i]['Impressions'].values[0] for i in group_keys}
-        post_count = df8['Type Emoji'].value_counts()
+        filtered_df.insert(1, "Post Count", post_count)
+        organize_emoji = []
+        organize_number_posts = []
+        organize_impressions = []
+        for i in group_keys:
+            organize_emoji.append(i)
+            organize_number_posts.append(filtered_df.loc[filtered_df['Type Emoji'] == i]['Post Count'].values[0])
+            organize_impressions.append(filtered_df.loc[filtered_df['Type Emoji'] == i]['Impressions'].values[0])
         data = {
-            "Type Emoji": match_data.keys(),
-            "Number of Posts": list(post_count),
-            "Impressions": match_data.values()
+            "Type Emoji": organize_emoji,
+            "Number of Posts": organize_number_posts,
+            "Impressions": organize_impressions
         }
         fig = px.bar(data, x="Type Emoji", y="Impressions", template='seaborn')
         st.plotly_chart(fig, use_container_width=True, height=200)
