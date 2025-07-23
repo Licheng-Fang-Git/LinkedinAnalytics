@@ -10,10 +10,16 @@ from streamlit_plotly_events import plotly_events
 sheet_id = '1thMQ4ndtgzyEM6qfoA2tfrt3MEzZY2CtxhjpCTNcS0U'  # Example: '1mSEJtzy5L0nuIMRlY9rYdC5s899Ptu2gdMJcIalr5pg'
 content_sheet_name = 'Content'
 follower_sheet = 'Sheet24'
+location_sheet = 'Sheet25'
+job_function_sheet = 'Sheet26'
+industry_sheet = 'Sheet27'
 #
 # Construct the URL for CSV export
 content_csv_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={content_sheet_name}'
 follower_csv_url =  f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={follower_sheet}'
+location_sheet_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={location_sheet}'
+job_function_sheet_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={job_function_sheet}'
+industry_sheet_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={industry_sheet}'
 
 
 st.logo('trillium_logo.png', link='https://www.trlm.com/', size='large', icon_image='trillium_trading_logo.png')
@@ -25,6 +31,9 @@ tab1, tab2 = st.tabs(["Default Information", "Filtered Data"])
 
 df = pd.read_csv(content_csv_url)
 follower_df = pd.read_csv(follower_csv_url)
+location_df = pd.read_csv(location_sheet_url)
+job_function_df = pd.read_csv(job_function_sheet_url)
+industry_df = pd.read_csv(industry_sheet_url)
 
 df['Created date'] = pd.to_datetime(df['Created date'])
 
@@ -32,6 +41,28 @@ startDate = pd.to_datetime(df["Created date"]).min()
 endDate = pd.to_datetime(df["Created date"]).max()
 
 with tab1:
+    def create_pie_chart(category, aggregate, dataframe ):
+        group_keys = list(dataframe.groupby(category).groups.keys())
+        filtered_df = dataframe.groupby(category)[['Impressions']].mean().round()
+        post_count = list(dataframe.groupby(category)['Number of Post'].sum())
+        filtered_df.insert(0, category, group_keys)
+        filtered_df.insert(1, "Post Count", post_count)
+        organize_time = []
+        organize_number_posts = []
+        organize_impressions = []
+        for i in group_keys:
+            organize_time.append(i)
+            organize_impressions.append(filtered_df.loc[filtered_df[category] == i]['Impressions'].values[0])
+        data = {
+            category : organize_time,
+            "Number of Posts": organize_number_posts,
+            "Impressions" : organize_impressions
+        }
+        fig = px.bar(data, x=category, y="Impressions", template='seaborn')
+        selected_bar = st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun')
+        st.dataframe(data)
+
+
     st.subheader("Total Follower")
     filtered_df = follower_df.groupby('Month/Yr')[['Follower Count']].sum()
     data = {
@@ -44,19 +75,19 @@ with tab1:
 
     st.badge("New")
     st.subheader("Posting Frequency")
-    print(df['Month & Year'].unique()[::-1])
     post_count = df['Month & Year'].value_counts().sort_index()
     match_data = { month : post_count[month] for month in list(df['Month & Year'].unique())[::-1]}
     data = {
         "Month/Yr": list(match_data.keys()),
         "Number of Post": list(match_data.values())
     }
-    print(data)
-
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=data['Month/Yr'], y=data['Number of Post'], name='Post Frequency'))
     st.plotly_chart(fig, picker=True, use_container_width=True, theme = None, height=1500)
     st.dataframe(data)
+
+    st.badge("New")
+    locations = st.multiselect("Pick the location", location_df['Location'].unique())
 
 with tab2:
     col1, col2 = st.columns([2, 2])
@@ -154,6 +185,8 @@ with tab2:
                 post_data = {
                     "Post Title" : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Post title']),
                     "Link" : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Post link']),
+                    'Impressions' :  list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Impressions']),
+                    'Day' : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Day of the week']),
                     "Date Posted" : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Created date'].dt.date)
                 }
 
