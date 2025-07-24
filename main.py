@@ -3,7 +3,8 @@ import streamlit as st
 import plotly.express as px
 import gspread
 import plotly.graph_objects as go
-from streamlit import sidebar
+from PIL import Image
+from streamlit import sidebar, image
 from streamlit_plotly_events import plotly_events
 
 # # Replace with your actual sheet ID and name
@@ -23,7 +24,7 @@ industry_sheet_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq
 
 
 st.logo('trillium_logo.png', link='https://www.trlm.com/', size='large', icon_image='trillium_trading_logo.png')
-st.set_page_config(page_title = "LinkedIn Analytics!!", page_icon = "📈")
+st.set_page_config(page_title = "LinkedIn Analytics!!", page_icon = "📈", layout='wide')
 st.title("📈 Linkedin Analytics")
 st.markdown('<style>div.block-container{padding-top:2rem;} </style>', unsafe_allow_html= True)
 
@@ -41,26 +42,19 @@ startDate = pd.to_datetime(df["Created date"]).min()
 endDate = pd.to_datetime(df["Created date"]).max()
 
 with tab1:
-    def create_pie_chart(category, aggregate, dataframe ):
-        group_keys = list(dataframe.groupby(category).groups.keys())
-        filtered_df = dataframe.groupby(category)[['Impressions']].mean().round()
-        post_count = list(dataframe.groupby(category)['Number of Post'].sum())
-        filtered_df.insert(0, category, group_keys)
-        filtered_df.insert(1, "Post Count", post_count)
-        organize_time = []
-        organize_number_posts = []
-        organize_impressions = []
-        for i in group_keys:
-            organize_time.append(i)
-            organize_impressions.append(filtered_df.loc[filtered_df[category] == i]['Impressions'].values[0])
+    def create_pie_chart(category, aggregate, dataframe, array ):
+        group_keys = array
+        filtered_df = dataframe.groupby(category)[[aggregate]].sum()
+        filtered_df = filtered_df.loc[array]
+        print(filtered_df)
         data = {
-            category : organize_time,
-            "Number of Posts": organize_number_posts,
-            "Impressions" : organize_impressions
+            'Location' : array,
+            "Followers" : filtered_df['Total followers']
         }
-        fig = px.bar(data, x=category, y="Impressions", template='seaborn')
-        selected_bar = st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun')
-        st.dataframe(data)
+        print(data)
+        convert_df = pd.DataFrame(data)
+        fig = px.pie(convert_df, values='Followers', names='Location')
+        st.plotly_chart(fig)
 
 
     st.subheader("Total Follower")
@@ -74,6 +68,13 @@ with tab1:
     st.plotly_chart(fig, picker=True, use_container_width=True, theme = None, height=1500)
 
     st.badge("New")
+    st.subheader("Demographics")
+    locations = st.multiselect("Pick the location", location_df['Location'])
+    if locations:
+        create_pie_chart('Location', 'Total followers', location_df, locations)
+    st.dataframe(location_df)
+
+    st.badge("New")
     st.subheader("Posting Frequency")
     post_count = df['Month & Year'].value_counts().sort_index()
     match_data = { month : post_count[month] for month in list(df['Month & Year'].unique())[::-1]}
@@ -85,9 +86,6 @@ with tab1:
     fig.add_trace(go.Scatter(x=data['Month/Yr'], y=data['Number of Post'], name='Post Frequency'))
     st.plotly_chart(fig, picker=True, use_container_width=True, theme = None, height=1500)
     st.dataframe(data)
-
-    st.badge("New")
-    locations = st.multiselect("Pick the location", location_df['Location'].unique())
 
 with tab2:
     col1, col2 = st.columns([2, 2])
