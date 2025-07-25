@@ -3,9 +3,8 @@ import streamlit as st
 import plotly.express as px
 import gspread
 import plotly.graph_objects as go
-from PIL import Image
-from streamlit import sidebar, image
-from streamlit_plotly_events import plotly_events
+import numpy as np
+from matplotlib import pyplot as plt
 
 # # Replace with your actual sheet ID and name
 sheet_id = '1thMQ4ndtgzyEM6qfoA2tfrt3MEzZY2CtxhjpCTNcS0U'  # Example: '1mSEJtzy5L0nuIMRlY9rYdC5s899Ptu2gdMJcIalr5pg'
@@ -46,12 +45,10 @@ with tab1:
         group_keys = array
         filtered_df = dataframe.groupby(category)[[aggregate]].sum()
         filtered_df = filtered_df.loc[array]
-        print(filtered_df)
         data = {
             'Location' : array,
-            "Followers" : filtered_df['Total followers']
+            "Followers" : filtered_df[aggregate]
         }
-        print(data)
         convert_df = pd.DataFrame(data)
         fig = px.pie(convert_df, values='Followers', names='Location')
         st.plotly_chart(fig)
@@ -66,15 +63,82 @@ with tab1:
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=data['Month/Yr'], y=data['Follower'], name='Follower Count'))
     st.plotly_chart(fig, picker=True, use_container_width=True, theme = None, height=1500)
-
+    st.divider()
     st.badge("New")
-    st.subheader("Demographics")
-    locations = st.multiselect("Pick the location", location_df['Location'])
-    if locations:
-        create_pie_chart('Location', 'Total followers', location_df, locations)
-    st.dataframe(location_df)
+    st.header("Demographics:")
+    follower, views = st.columns(2)
 
-    st.badge("New")
+    with follower:
+        st.subheader("Total Followers Demographics")
+        locations = st.multiselect("Pick the Location", location_df['Location'])
+        if locations:
+            create_pie_chart('Location', 'Total followers', location_df, locations)
+        follower_total_data = {
+            'Location': location_df['Location'],
+            "Total followers": location_df['Total followers']
+        }
+        st.dataframe(follower_total_data)
+
+    with views:
+        st.subheader("Total Views Demographics")
+        locations_view = st.multiselect("Pick the Location", location_df['Location View'])
+        if locations_view:
+            create_pie_chart('Location View', 'Total views', location_df, locations_view)
+        follower_total_data = {
+            'Location': location_df['Location View'],
+            "Total views": location_df['Total views']
+        }
+        st.dataframe(follower_total_data)
+
+    with follower:
+        st.divider()
+        st.subheader("Job Field")
+        fields = st.multiselect("Pick the Job Field", job_function_df['Job function'])
+        if fields:
+            create_pie_chart('Job function', 'Total followers', job_function_df, fields)
+        follower_total_data = {
+            'Job': job_function_df['Job function'],
+            'Total followers': job_function_df['Total followers']
+        }
+        st.dataframe(follower_total_data)
+
+    with views:
+        st.divider()
+        st.subheader("Job View")
+        job_view = st.multiselect("Pick the Job Field", job_function_df['Job View'])
+        if job_view:
+            create_pie_chart('Job View', 'Total views', job_function_df, job_view)
+        follower_total_data = {
+            'Job': job_function_df['Job View'],
+            'Total views': job_function_df['Total views']
+        }
+        st.dataframe(follower_total_data)
+
+    with follower:
+        st.divider()
+        st.subheader("Industry Field")
+        industry_fields = st.multiselect("Pick the Industry Field", industry_df['Industry'])
+        if industry_fields:
+            create_pie_chart('Industry', 'Total followers', industry_df, industry_fields)
+        follower_total_data = {
+            'Industry': industry_df['Industry'],
+            'Total followers': industry_df['Total followers']
+        }
+        st.dataframe(follower_total_data)
+
+    with views:
+        st.divider()
+        st.subheader("Industry View")
+        industry_view = st.multiselect("Pick the Industry Field", industry_df['Industry View'])
+        if industry_view:
+            create_pie_chart('Industry', 'Total views', industry_df, industry_view)
+        follower_total_data = {
+            'Industry': industry_df['Industry'],
+            'Total views': industry_df['Total views']
+        }
+        st.dataframe(follower_total_data)
+
+    st.divider()
     st.subheader("Posting Frequency")
     post_count = df['Month & Year'].value_counts().sort_index()
     match_data = { month : post_count[month] for month in list(df['Month & Year'].unique())[::-1]}
@@ -82,12 +146,19 @@ with tab1:
         "Month/Yr": list(match_data.keys()),
         "Number of Post": list(match_data.values())
     }
+    x = np.array(data['Month/Yr'])
+    y = np.array(data['Number of Post'])
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=data['Month/Yr'], y=data['Number of Post'], name='Post Frequency'))
     st.plotly_chart(fig, picker=True, use_container_width=True, theme = None, height=1500)
     st.dataframe(data)
 
 with tab2:
+    df["Impressions"].astype(int)
+    df["Clicks"].astype(int)
+    df["Click through rate (CTR)"].astype(int)
+    df["Engagement rate"].astype(int)
+
     col1, col2 = st.columns([2, 2])
     with col1:
         date1 = pd.to_datetime(st.date_input("Start Date", startDate))
@@ -153,72 +224,97 @@ with tab2:
     else:
         df8 = df7[df7["Type Emoji"].isin(emoji)]
 
-    df["Impressions"].astype(int)
+
+    agg = st.sidebar.multiselect("Pick the Aggregate", ['Impressions', 'Clicks', 'Click through rate (CTR)', 'Engagement rate'])
 
     def create_chart(category, aggregate, dataframe ):
+        st.subheader(f"{category} {aggregate} Chart")
         group_keys = list(dataframe.groupby(category).groups.keys())
-        filtered_df = dataframe.groupby(category)[['Impressions']].mean().round()
+        filtered_df = dataframe.groupby(category)[[aggregate]].mean()
         post_count = list(dataframe.groupby(category)['Number of Post'].sum())
         filtered_df.insert(0, category, group_keys)
         filtered_df.insert(1, "Post Count", post_count)
+
         organize_time = []
         organize_number_posts = []
         organize_impressions = []
-        for i in group_keys:
-            organize_time.append(i)
-            organize_number_posts.append(filtered_df.loc[filtered_df[category] == i]['Post Count'].values[0])
-            organize_impressions.append(filtered_df.loc[filtered_df[category] == i]['Impressions'].values[0])
+
+        if aggregate == 'Impressions' or aggregate == 'Clicks':
+            for i in group_keys:
+                organize_time.append(i)
+                organize_number_posts.append(filtered_df.loc[filtered_df[category] == i]['Post Count'].values[0])
+                organize_impressions.append(filtered_df.loc[filtered_df[category] == i][aggregate].values[0].round())
+
+        elif aggregate == 'Engagement rate' or aggregate == 'Click through rate (CTR)':
+            for i in group_keys:
+                organize_time.append(i)
+                organize_number_posts.append(filtered_df.loc[filtered_df[category] == i]['Post Count'].values[0])
+                organize_impressions.append((filtered_df.loc[filtered_df[category] == i][aggregate].values[0]*100).round(2))
+
         data = {
             category : organize_time,
             "Number of Posts": organize_number_posts,
-            "Impressions" : organize_impressions
+            aggregate : organize_impressions
         }
-        fig = px.bar(data, x=category, y="Impressions", template='seaborn')
+
+        fig = px.bar(data, x=category, y=aggregate, template='seaborn', color=category)
         selected_bar = st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun')
         st.dataframe(data)
-        st.badge("New")
+
         if selected_bar:
             if selected_bar['selection']['points']:
-
                 post_data = {
                     "Post Title" : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Post title']),
                     "Link" : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Post link']),
-                    'Impressions' :  list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Impressions']),
+                    aggregate :  list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]][aggregate]),
                     'Day' : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Day of the week']),
                     "Date Posted" : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Created date'].dt.date)
                 }
 
-                st.dataframe(post_data, use_container_width=True)
-
-
+                st.dataframe(post_data)
 
     if year:
         st.subheader(f"Year's Bar Chart")
-        create_chart('Year', 'Impressions', df2)
+        for a in agg:
+            create_chart('Year', a, df2)
+        st.divider()
+        st.empty()
 
     if month:
         st.subheader(f"Month's Bar Chart")
-        create_chart('Month & Year', 'Impressions', df3)
+        for a in agg:
+            create_chart('Month & Year', a, df3)
+        st.divider()
 
     if day:
         st.subheader(f"Day Bar Chart")
-        create_chart('Day of the week', 'Impressions', df4)
+        for a in agg:
+            create_chart('Day of the week', a, df4)
+        st.divider()
 
     if time:
         st.subheader(f"Time of Post Chart")
-        create_chart('Interval Times', 'Impressions', df5)
+        for a in agg:
+            create_chart('Interval Times', a, df5)
+        st.divider()
 
     if category:
         st.subheader(f"Category Chart")
-        create_chart('Category', 'Impressions', df6)
+        for a in agg:
+            create_chart('Category', a, df6)
+        st.divider()
 
     if sub_category:
         st.subheader(f"Sub-Category Chart")
-        create_chart('Sub-Category', 'Impressions', df7)
+        for a in agg:
+            create_chart('Sub-Category', a, df7)
+        st.divider()
 
     if emoji:
         st.subheader(f"Emoji Chart")
-        create_chart('Type Emoji', 'Impressions', df8)
+        for a in agg:
+            create_chart('Type Emoji', a, df8)
+        st.divider()
 
 
 # if not year and not month and not day and not time:
