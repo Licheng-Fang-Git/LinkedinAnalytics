@@ -28,7 +28,7 @@ st.title("📈 Linkedin Analytics")
 st.markdown('<style>div.block-container{padding-top:2rem;} </style>', unsafe_allow_html= True)
 
 tab1, tab2 = st.tabs(["Default Information", "Filtered Data"])
-
+print("Hello")
 df = pd.read_csv(content_csv_url)
 follower_df = pd.read_csv(follower_csv_url)
 location_df = pd.read_csv(location_sheet_url)
@@ -224,6 +224,12 @@ with tab2:
     else:
         df8 = df7[df7["Type Emoji"].isin(emoji)]
 
+    type_post = st.sidebar.multiselect('Pick the type of Post', df['Type of Post'].unique())
+    if not type_post:
+        df9 = df8.copy()
+    else:
+        df9 = df8[df8['Type of Post'].isin(type_post)]
+
 
     agg = st.sidebar.multiselect("Pick the Aggregate", ['Impressions', 'Clicks', 'Click through rate (CTR)', 'Engagement rate'])
 
@@ -316,32 +322,7 @@ with tab2:
             create_chart('Type Emoji', a, df8)
         st.divider()
 
-
-# if not year and not month and not day and not time:
-#     filtered_df = df
-# elif not month and not day and not time:
-#     filtered_df = df[df["Year"].isin(year)]
-# elif not year and not day and not time:
-#     filtered_df = df[df["Month & Year"].isin(month)]
-# elif not year and not month and not time:
-#     filtered_df = df[df["Day of the Week"].isin(day)]
-# elif day and time:
-#     filtered_df = df4[df["Day of the Week"].isin(day) & df4["Interval Times"].isin(time)]
-# elif month and time:
-#     filtered_df = df4[df["Day of the Week"].isin(month) & df4["Interval Times"].isin(time)]
-# elif year and time:
-#     filtered_df = df4[df["Day of the Week"].isin(year) & df4["Interval Times"].isin(time)]
-# else:
-#     filtered_df = df4[df4["Year"].isin(time)]
-
-# access = gspread.oauth()
-# sheet_id = "1thMQ4ndtgzyEM6qfoA2tfrt3MEzZY2CtxhjpCTNcS0U"
-# wb = access.open_by_key(sheet_id)
-#
-# sheet = wb.worksheet("Content").get_all_records()
-# df = pd.DataFrame(sheet)
-# print(df.columns)
-# print(df._get_column_array(5))
-# df = pd.DataFrame(sheet)
-# print(df.columns)
-# print(df._get_column_array(5))
+    if type_post:
+        st.subheader(f"Type Post Chart")
+        for a in agg:
+            create_chart('Type of Post', a, df9)
