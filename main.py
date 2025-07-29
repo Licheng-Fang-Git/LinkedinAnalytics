@@ -28,7 +28,7 @@ st.title("📈 Linkedin Analytics")
 st.markdown('<style>div.block-container{padding-top:2rem;} </style>', unsafe_allow_html= True)
 
 tab1, tab2 = st.tabs(["Default Information", "Filtered Data"])
-print("Hello")
+
 df = pd.read_csv(content_csv_url)
 follower_df = pd.read_csv(follower_csv_url)
 location_df = pd.read_csv(location_sheet_url)
@@ -39,6 +39,7 @@ df['Created date'] = pd.to_datetime(df['Created date'])
 
 startDate = pd.to_datetime(df["Created date"]).min()
 endDate = pd.to_datetime(df["Created date"]).max()
+
 
 with tab1:
     def create_pie_chart(category, aggregate, dataframe, array ):
@@ -267,6 +268,7 @@ with tab2:
         selected_bar = st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun')
         st.dataframe(data)
 
+      
         if selected_bar:
             if selected_bar['selection']['points']:
                 post_data = {
@@ -277,14 +279,44 @@ with tab2:
                     "Date Posted" : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Created date'].dt.date)
                 }
 
-                st.dataframe(post_data)
+
+                st.data_editor(post_data, num_rows='dynamic')
+
+                # if 'data' not in st.session_state:
+                #     st.session_state.data = pd.DataFrame(post_data)
+                #
+                # def handle_data_editor_changes():
+                #     edited_data = st.session_state.my_data_editor
+                #     deleted_rows_indices = edited_data["deleted_rows"]
+                #
+                #     if deleted_rows_indices:
+                #         # Drop the deleted rows from the original DataFrame
+                #         st.session_state.data = st.session_state.data.drop(
+                #             deleted_rows_indices, axis=0
+                #         ).reset_index(drop=True)
+                #
+                # st.title("Data Editor with Deletion")
+
+                # st.data_editor(
+                #     st.session_state.data,
+                #     key="my_data_editor",
+                #     on_change=handle_data_editor_changes,
+                #     num_rows="dynamic"  # Enable dynamic row addition/deletion
+                # )
+
+                # pdf = pd.DataFrame.from_dict(post_data)
+                # selected_rows = st.dataframe(pdf, on_select='rerun', selection_mode='multi-row')
+                #
+                # if selected_rows['selection']['rows']:
+                #     pdf.drop(selected_rows['selection']['rows'][0])
+                # st.dataframe(pdf)
+                # print(selected_rows)
 
     if year:
         st.subheader(f"Year's Bar Chart")
         for a in agg:
             create_chart('Year', a, df2)
         st.divider()
-        st.empty()
 
     if month:
         st.subheader(f"Month's Bar Chart")
