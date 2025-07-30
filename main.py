@@ -16,16 +16,15 @@ industry_sheet = 'Sheet27'
 #
 # Construct the URL for CSV export
 content_csv_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={content_sheet_name}'
-follower_csv_url =  f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={follower_sheet}'
+follower_csv_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={follower_sheet}'
 location_sheet_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={location_sheet}'
 job_function_sheet_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={job_function_sheet}'
 industry_sheet_url = f'https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={industry_sheet}'
 
-
 st.logo('trillium_logo.png', link='https://www.trlm.com/', size='large', icon_image='trillium_trading_logo.png')
-st.set_page_config(page_title = "LinkedIn Analytics!!", page_icon = "📈", layout='wide')
+st.set_page_config(page_title="LinkedIn Analytics!!", page_icon="📈", layout='wide')
 st.title("📈 Linkedin Analytics")
-st.markdown('<style>div.block-container{padding-top:2rem;} </style>', unsafe_allow_html= True)
+st.markdown('<style>div.block-container{padding-top:2rem;} </style>', unsafe_allow_html=True)
 
 tab1, tab2 = st.tabs(["Default Information", "Filtered Data"])
 
@@ -40,15 +39,14 @@ df['Created date'] = pd.to_datetime(df['Created date'])
 startDate = pd.to_datetime(df["Created date"]).min()
 endDate = pd.to_datetime(df["Created date"]).max()
 
-
 with tab1:
-    def create_pie_chart(category, aggregate, dataframe, array ):
+    def create_pie_chart(category, aggregate, dataframe, array):
         group_keys = array
         filtered_df = dataframe.groupby(category)[[aggregate]].sum()
         filtered_df = filtered_df.loc[array]
         data = {
-            'Location' : array,
-            "Followers" : filtered_df[aggregate]
+            'Location': array,
+            "Followers": filtered_df[aggregate]
         }
         convert_df = pd.DataFrame(data)
         fig = px.pie(convert_df, values='Followers', names='Location')
@@ -63,7 +61,7 @@ with tab1:
     }
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=data['Month/Yr'], y=data['Follower'], name='Follower Count'))
-    st.plotly_chart(fig, picker=True, use_container_width=True, theme = None, height=1500)
+    st.plotly_chart(fig, picker=True, use_container_width=True, theme=None, height=1500)
     st.divider()
     st.badge("New")
     st.header("Demographics:")
@@ -142,7 +140,7 @@ with tab1:
     st.divider()
     st.subheader("Posting Frequency")
     post_count = df['Month & Year'].value_counts().sort_index()
-    match_data = { month : post_count[month] for month in list(df['Month & Year'].unique())[::-1]}
+    match_data = {month: post_count[month] for month in list(df['Month & Year'].unique())[::-1]}
     data = {
         "Month/Yr": list(match_data.keys()),
         "Number of Post": list(match_data.values())
@@ -151,7 +149,7 @@ with tab1:
     y = np.array(data['Number of Post'])
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=data['Month/Yr'], y=data['Number of Post'], name='Post Frequency'))
-    st.plotly_chart(fig, picker=True, use_container_width=True, theme = None, height=1500)
+    st.plotly_chart(fig, picker=True, use_container_width=True, theme=None, height=1500)
     st.dataframe(data)
 
 with tab2:
@@ -231,10 +229,17 @@ with tab2:
     else:
         df9 = df8[df8['Type of Post'].isin(type_post)]
 
+    agg = st.sidebar.multiselect("Pick the Aggregate",
+                                 ['Impressions', 'Clicks', 'Click through rate (CTR)', 'Engagement rate'])
 
-    agg = st.sidebar.multiselect("Pick the Aggregate", ['Impressions', 'Clicks', 'Click through rate (CTR)', 'Engagement rate'])
+    def process_changes():
+        editor_state = st.session_state.get('dynamic_editor', {})
+        deleted = editor_state.get('deleted_rows', {})
+        st.write(f'Processed Changes')
+        st.write(f'Deleted Rows {deleted}')
+        st.write(editor_state)
 
-    def create_chart(category, aggregate, dataframe ):
+    def create_chart(category, aggregate, dataframe):
         st.subheader(f"{category} {aggregate} Chart")
         group_keys = list(dataframe.groupby(category).groups.keys())
         filtered_df = dataframe.groupby(category)[[aggregate]].mean()
@@ -256,61 +261,53 @@ with tab2:
             for i in group_keys:
                 organize_time.append(i)
                 organize_number_posts.append(filtered_df.loc[filtered_df[category] == i]['Post Count'].values[0])
-                organize_impressions.append((filtered_df.loc[filtered_df[category] == i][aggregate].values[0]*100).round(2))
+                organize_impressions.append(
+                    (filtered_df.loc[filtered_df[category] == i][aggregate].values[0] * 100).round(2))
 
         data = {
-            category : organize_time,
+            category: organize_time,
             "Number of Posts": organize_number_posts,
-            aggregate : organize_impressions
+            aggregate: list(sorted(organize_impressions))
         }
+
+        print(data[aggregate])
 
         fig = px.bar(data, x=category, y=aggregate, template='seaborn', color=category)
         selected_bar = st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun')
         st.dataframe(data)
 
-      
         if selected_bar:
             if selected_bar['selection']['points']:
                 post_data = {
-                    "Post Title" : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Post title']),
-                    "Link" : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Post link']),
-                    aggregate :  list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]][aggregate]),
-                    'Day' : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Day of the week']),
-                    "Date Posted" : list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Created date'].dt.date)
+                    "Post Title": list(
+                        dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]][
+                            'Post title']),
+                    "Link": list(
+                        dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Post link']),
+                    aggregate: sorted(list(
+                        dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]][aggregate])),
+                    'Day': list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]][
+                                    'Day of the week']),
+                    "Date Posted": list(
+                        dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]][
+                            'Created date'].dt.date)
+
                 }
 
+                post_data_df = pd.DataFrame(post_data)
+                edit_posts = st.data_editor(
+                    post_data_df,
+                    key='dynamic_editor',
+                    hide_index=True,
+                    num_rows='dynamic',
+                    on_change=process_changes(),
+                )
 
-                st.data_editor(post_data, num_rows='dynamic')
+                fig = px.bar(edit_posts, x=category, y=aggregate, template='seaborn', color=category)
+                st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun')
 
-                # if 'data' not in st.session_state:
-                #     st.session_state.data = pd.DataFrame(post_data)
-                #
-                # def handle_data_editor_changes():
-                #     edited_data = st.session_state.my_data_editor
-                #     deleted_rows_indices = edited_data["deleted_rows"]
-                #
-                #     if deleted_rows_indices:
-                #         # Drop the deleted rows from the original DataFrame
-                #         st.session_state.data = st.session_state.data.drop(
-                #             deleted_rows_indices, axis=0
-                #         ).reset_index(drop=True)
-                #
-                # st.title("Data Editor with Deletion")
 
-                # st.data_editor(
-                #     st.session_state.data,
-                #     key="my_data_editor",
-                #     on_change=handle_data_editor_changes,
-                #     num_rows="dynamic"  # Enable dynamic row addition/deletion
-                # )
 
-                # pdf = pd.DataFrame.from_dict(post_data)
-                # selected_rows = st.dataframe(pdf, on_select='rerun', selection_mode='multi-row')
-                #
-                # if selected_rows['selection']['rows']:
-                #     pdf.drop(selected_rows['selection']['rows'][0])
-                # st.dataframe(pdf)
-                # print(selected_rows)
 
     if year:
         st.subheader(f"Year's Bar Chart")
