@@ -1,3 +1,5 @@
+import copy
+
 import pandas as pd
 import streamlit as st
 import plotly.express as px
@@ -5,6 +7,9 @@ import gspread
 import plotly.graph_objects as go
 import numpy as np
 from matplotlib import pyplot as plt
+import math
+
+from streamlit import session_state
 
 # # Replace with your actual sheet ID and name
 sheet_id = '1thMQ4ndtgzyEM6qfoA2tfrt3MEzZY2CtxhjpCTNcS0U'  # Example: '1mSEJtzy5L0nuIMRlY9rYdC5s899Ptu2gdMJcIalr5pg'
@@ -237,9 +242,9 @@ with tab2:
         deleted = editor_state.get('deleted_rows', {})
         st.write(f'Processed Changes')
         st.write(f'Deleted Rows {deleted}')
-        st.write(editor_state)
 
     def create_chart(category, aggregate, dataframe):
+
         st.subheader(f"{category} {aggregate} Chart")
         group_keys = list(dataframe.groupby(category).groups.keys())
         filtered_df = dataframe.groupby(category)[[aggregate]].mean()
@@ -267,13 +272,11 @@ with tab2:
         data = {
             category: organize_time,
             "Number of Posts": organize_number_posts,
-            aggregate: list(sorted(organize_impressions))
+            aggregate: list(organize_impressions)
         }
 
-        print(data[aggregate])
-
         fig = px.bar(data, x=category, y=aggregate, template='seaborn', color=category)
-        selected_bar = st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun')
+        selected_bar = st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun', key='chart1')
         st.dataframe(data)
 
         if selected_bar:
@@ -290,10 +293,9 @@ with tab2:
                                     'Day of the week']),
                     "Date Posted": list(
                         dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]][
-                            'Created date'].dt.date)
-
+                            'Created date'].dt.date),
                 }
-
+                # post_data[category] = [ selected_bar['selection']['points'][0]["x"] for _ in range(len(post_data['Day']))]
                 post_data_df = pd.DataFrame(post_data)
                 edit_posts = st.data_editor(
                     post_data_df,
@@ -302,12 +304,28 @@ with tab2:
                     num_rows='dynamic',
                     on_change=process_changes(),
                 )
+                edit_posts = pd.DataFrame(edit_posts)
+                selected_data = data.copy()
 
-                fig = px.bar(edit_posts, x=category, y=aggregate, template='seaborn', color=category)
-                st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun')
+                if 'my_dataframe' not in st.session_state:
+                    print(True)
+                    st.session_state['my_dataframe'] = pd.DataFrame(selected_data)
 
+                print(session_state)
 
+                # selected_data = st.session_state.get('my_dataframe', data.copy())
 
+                category_selected = selected_bar['selection']['points'][0]["x"]
+                new_agg = edit_posts[aggregate].mean().round()
+
+                for idx, value in enumerate(selected_data[category]):
+                    if value == category_selected:
+                        selected_data[aggregate][idx] = new_agg
+
+                fig = px.bar(data, x=category, y=aggregate, template='seaborn', color=category)
+                st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun',key='chart2')
+
+                st.dataframe(data)
 
     if year:
         st.subheader(f"Year's Bar Chart")
