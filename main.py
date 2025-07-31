@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 import numpy as np
 from matplotlib import pyplot as plt
 import math
-
+import streamlit_authenticator as stauth
 from streamlit import session_state
 
 # # Replace with your actual sheet ID and name
@@ -237,13 +237,13 @@ with tab2:
     agg = st.sidebar.multiselect("Pick the Aggregate",
                                  ['Impressions', 'Clicks', 'Click through rate (CTR)', 'Engagement rate'])
 
-    def process_changes():
-        editor_state = st.session_state.get('dynamic_editor', {})
+    def process_changes(key_name):
+        editor_state = st.session_state.get(key_name, {})
         deleted = editor_state.get('deleted_rows', {})
         st.write(f'Processed Changes')
         st.write(f'Deleted Rows {deleted}')
 
-    def create_chart(category, aggregate, dataframe):
+    def create_chart(category, aggregate, dataframe, dynamic_key, chart_key):
 
         st.subheader(f"{category} {aggregate} Chart")
         group_keys = list(dataframe.groupby(category).groups.keys())
@@ -276,7 +276,7 @@ with tab2:
         }
 
         fig = px.bar(data, x=category, y=aggregate, template='seaborn', color=category)
-        selected_bar = st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun', key='chart1')
+        selected_bar = st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun')
         st.dataframe(data)
 
         if selected_bar:
@@ -287,8 +287,8 @@ with tab2:
                             'Post title']),
                     "Link": list(
                         dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]]['Post link']),
-                    aggregate: sorted(list(
-                        dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]][aggregate])),
+                    aggregate: list(
+                        dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]][aggregate]),
                     'Day': list(dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]][
                                     'Day of the week']),
                     "Date Posted": list(
@@ -297,79 +297,73 @@ with tab2:
                 }
                 # post_data[category] = [ selected_bar['selection']['points'][0]["x"] for _ in range(len(post_data['Day']))]
                 post_data_df = pd.DataFrame(post_data)
-                edit_posts = st.data_editor(
-                    post_data_df,
-                    key='dynamic_editor',
-                    hide_index=True,
-                    num_rows='dynamic',
-                    on_change=process_changes(),
-                )
-                edit_posts = pd.DataFrame(edit_posts)
-                selected_data = data.copy()
+                st.dataframe(post_data_df)
 
-                if 'my_dataframe' not in st.session_state:
-                    print(True)
-                    st.session_state['my_dataframe'] = pd.DataFrame(selected_data)
+                # edit_posts = st.data_editor(
+                #     post_data_df,
+                #     key=dynamic_key,
+                #     hide_index=True,
+                #     num_rows='dynamic',
+                #     on_change=process_changes(dynamic_key),
+                # )
+                # edit_posts = pd.DataFrame(edit_posts)
+                #
+                # category_selected = selected_bar['selection']['points'][0]["x"]
+                # new_agg = edit_posts[aggregate].mean().round()
+                #
+                # for idx, value in enumerate(data[category]):
+                #     if value == category_selected:
+                #         data[aggregate][idx] = new_agg
+                #
+                # fig = px.bar(data, x=category, y=aggregate, template='seaborn', color=category)
+                # st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun',key=key_name)
+                #
+                # st.dataframe(data)
 
-                print(session_state)
-
-                # selected_data = st.session_state.get('my_dataframe', data.copy())
-
-                category_selected = selected_bar['selection']['points'][0]["x"]
-                new_agg = edit_posts[aggregate].mean().round()
-
-                for idx, value in enumerate(selected_data[category]):
-                    if value == category_selected:
-                        selected_data[aggregate][idx] = new_agg
-
-                fig = px.bar(data, x=category, y=aggregate, template='seaborn', color=category)
-                st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun',key='chart2')
-
-                st.dataframe(data)
 
     if year:
         st.subheader(f"Year's Bar Chart")
         for a in agg:
-            create_chart('Year', a, df2)
+            create_chart('Year', a, df2, 'dynamic2', 'chart3')
         st.divider()
 
     if month:
         st.subheader(f"Month's Bar Chart")
         for a in agg:
-            create_chart('Month & Year', a, df3)
+            create_chart('Month & Year', a, df3, 'dynamic3', 'chart4')
         st.divider()
 
     if day:
         st.subheader(f"Day Bar Chart")
         for a in agg:
-            create_chart('Day of the week', a, df4)
+            create_chart('Day of the week', a, df4, 'dynamic4', 'chart5')
         st.divider()
 
     if time:
         st.subheader(f"Time of Post Chart")
         for a in agg:
-            create_chart('Interval Times', a, df5)
+            create_chart('Interval Times', a, df5, 'dynamic5', 'chart6')
         st.divider()
 
     if category:
         st.subheader(f"Category Chart")
         for a in agg:
-            create_chart('Category', a, df6)
+            create_chart('Category', a, df6, 'dynamic6', 'chart7')
         st.divider()
 
     if sub_category:
         st.subheader(f"Sub-Category Chart")
         for a in agg:
-            create_chart('Sub-Category', a, df7)
+            create_chart('Sub-Category', a, df7, 'dynamic7', 'chart8')
         st.divider()
 
     if emoji:
         st.subheader(f"Emoji Chart")
         for a in agg:
-            create_chart('Type Emoji', a, df8)
+            create_chart('Type Emoji', a, df8, 'dynamic8', 'chart9')
         st.divider()
 
     if type_post:
         st.subheader(f"Type Post Chart")
         for a in agg:
-            create_chart('Type of Post', a, df9)
+            create_chart('Type of Post', a, df9, 'dynamic9', 'chart10')
