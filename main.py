@@ -1,10 +1,8 @@
 import pandas as pd
 import streamlit as st
 import plotly.express as px
-import gspread
 import plotly.graph_objects as go
 import numpy as np
-from matplotlib import pyplot as plt
 import streamlit_authenticator as stauth
 from streamlit import session_state, sidebar
 import pickle
