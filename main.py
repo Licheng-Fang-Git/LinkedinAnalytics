@@ -33,7 +33,7 @@ credentials = {
     }
 }
 authenticator = stauth.Authenticate(credentials, 'Linkedin Analytics!!', 'abcdef', 30)
-name, authentication_status, username = authenticator.login("main", 1)
+name, authentication_status, username = authenticator.login("main", 5)
 
 if authentication_status is False:
     st.error("Incorrect")
@@ -190,7 +190,7 @@ if authentication_status:
         st.plotly_chart(fig, picker=True, use_container_width=True, theme=None, height=1500)
         st.dataframe(data)
 
-    with tab2:
+    with (tab2):
         df["Impressions"].astype(int)
         df["Clicks"].astype(int)
         df["Click through rate (CTR)"].astype(int)
@@ -276,6 +276,29 @@ if authentication_status:
             st.write(f'Processed Changes')
             st.write(f'Deleted Rows {deleted}')
 
+        @st.fragment
+        def show_edit_chart(edit_frame, main_category, category_select, aggregate, all_data, dynamic_key, chart_key):
+            edit_posts = st.data_editor(
+                edit_frame,
+                key=dynamic_key,
+                hide_index=True,
+                num_rows='dynamic',
+                on_change=process_changes(dynamic_key),
+            )
+            edit_posts = pd.DataFrame(edit_posts)
+
+            new_agg = edit_posts[aggregate].mean().round()
+            for idx, value in enumerate(all_data[main_category]):
+                if value == category_select:
+                    all_data[aggregate][idx] = new_agg
+            st.write(new_agg)
+            if st.button("Show Edits"):
+                fig_plot = px.bar(all_data, x=main_category, y=aggregate, template='seaborn', color=main_category)
+                st.plotly_chart(fig_plot, use_container_width=True, height=200, key=chart_key)
+
+                st.dataframe(all_data)
+
+
         def create_chart(category, aggregate, dataframe, dynamic_key, chart_key):
 
             st.subheader(f"{category} {aggregate} Chart")
@@ -328,30 +351,8 @@ if authentication_status:
                             dataframe.loc[dataframe[category] == selected_bar['selection']['points'][0]["x"]][
                                 'Created date'].dt.date),
                     }
-                    # post_data[category] = [ selected_bar['selection']['points'][0]["x"] for _ in range(len(post_data['Day']))]
-                    post_data_df = pd.DataFrame(post_data)
-                    st.dataframe(post_data_df)
-
-                    # edit_posts = st.data_editor(
-                    #     post_data_df,
-                    #     key=dynamic_key,
-                    #     hide_index=True,
-                    #     num_rows='dynamic',
-                    #     on_change=process_changes(dynamic_key),
-                    # )
-                    # edit_posts = pd.DataFrame(edit_posts)
-                    #
-                    # category_selected = selected_bar['selection']['points'][0]["x"]
-                    # new_agg = edit_posts[aggregate].mean().round()
-                    #
-                    # for idx, value in enumerate(data[category]):
-                    #     if value == category_selected:
-                    #         data[aggregate][idx] = new_agg
-                    #
-                    # fig = px.bar(data, x=category, y=aggregate, template='seaborn', color=category)
-                    # st.plotly_chart(fig, use_container_width=True, height=200, on_select='rerun',key=key_name)
-                    #
-                    # st.dataframe(data)
+                    st.dataframe(post_data)
+                    show_edit_chart(post_data, category, selected_bar['selection']['points'][0]["x"], aggregate, data, dynamic_key, chart_key)
 
 
         if year:
