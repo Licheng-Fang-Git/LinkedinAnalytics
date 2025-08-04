@@ -90,7 +90,6 @@ if authentication_status:
             fig = px.pie(convert_df, values='Followers', names='Location')
             st.plotly_chart(fig)
 
-
         st.subheader("Total Follower")
         filtered_df = follower_df.groupby('Month/Yr')[['Follower Count']].sum()
         data = {
@@ -101,7 +100,7 @@ if authentication_status:
         fig.add_trace(go.Scatter(x=data['Month/Yr'], y=data['Follower'], name='Follower Count'))
         st.plotly_chart(fig, picker=True, use_container_width=True, theme=None, height=1500)
         st.divider()
-        st.badge("New")
+        
         st.header("Demographics:")
         follower, views = st.columns(2)
 
@@ -277,7 +276,7 @@ if authentication_status:
             st.write(f'Deleted Rows {deleted}')
 
         @st.fragment
-        def show_edit_chart(edit_frame, main_category, category_select, aggregate, all_data, dynamic_key, chart_key):
+        def show_edit_chart(edit_frame, main_category, category_select, aggregate, all_data, dynamic_key, chart_key, edit_button_key):
             edit_posts = st.data_editor(
                 edit_frame,
                 key=dynamic_key,
@@ -292,14 +291,14 @@ if authentication_status:
                 if value == category_select:
                     all_data[aggregate][idx] = new_agg
             st.write(new_agg)
-            if st.button("Show Edits"):
+            if st.button("Show Edits", key=edit_button_key):
                 fig_plot = px.bar(all_data, x=main_category, y=aggregate, template='seaborn', color=main_category)
                 st.plotly_chart(fig_plot, use_container_width=True, height=200, key=chart_key)
 
                 st.dataframe(all_data)
 
 
-        def create_chart(category, aggregate, dataframe, dynamic_key, chart_key):
+        def create_chart(category, aggregate, dataframe, dynamic_key, chart_key, edit_button_key):
 
             st.subheader(f"{category} {aggregate} Chart")
             group_keys = list(dataframe.groupby(category).groups.keys())
@@ -352,52 +351,52 @@ if authentication_status:
                                 'Created date'].dt.date),
                     }
                     st.dataframe(post_data)
-                    show_edit_chart(post_data, category, selected_bar['selection']['points'][0]["x"], aggregate, data, dynamic_key, chart_key)
+                    show_edit_chart(post_data, category, selected_bar['selection']['points'][0]["x"], aggregate, data, dynamic_key, chart_key, edit_button_key)
 
 
         if year:
             st.subheader(f"Year's Bar Chart")
             for a in agg:
-                create_chart('Year', a, df2, 'dynamic2', 'chart3')
+                create_chart('Year', a, df2, 'dynamic2', 'chart3', 'button2')
             st.divider()
 
         if month:
             st.subheader(f"Month's Bar Chart")
             for a in agg:
-                create_chart('Month & Year', a, df3, 'dynamic3', 'chart4')
+                create_chart('Month & Year', a, df3, 'dynamic3', 'chart4', 'button3')
             st.divider()
 
         if day:
             st.subheader(f"Day Bar Chart")
             for a in agg:
-                create_chart('Day of the week', a, df4, 'dynamic4', 'chart5')
+                create_chart('Day of the week', a, df4, 'dynamic4', 'chart5', 'button4')
             st.divider()
 
         if time:
             st.subheader(f"Time of Post Chart")
             for a in agg:
-                create_chart('Interval Times', a, df5, 'dynamic5', 'chart6')
+                create_chart('Interval Times', a, df5, 'dynamic5', 'chart6', 'button5')
             st.divider()
 
         if category:
             st.subheader(f"Category Chart")
             for a in agg:
-                create_chart('Category', a, df6, 'dynamic6', 'chart7')
+                create_chart('Category', a, df6, 'dynamic6', 'chart7', 'button6')
             st.divider()
 
         if sub_category:
             st.subheader(f"Sub-Category Chart")
             for a in agg:
-                create_chart('Sub-Category', a, df7, 'dynamic7', 'chart8')
+                create_chart('Sub-Category', a, df7, 'dynamic7', 'chart8', 'button7')
             st.divider()
 
         if emoji:
             st.subheader(f"Emoji Chart")
             for a in agg:
-                create_chart('Type Emoji', a, df8, 'dynamic8', 'chart9')
+                create_chart('Type Emoji', a, df8, 'dynamic8', 'chart9', 'button8')
             st.divider()
 
         if type_post:
             st.subheader(f"Type Post Chart")
             for a in agg:
-                create_chart('Type of Post', a, df9, 'dynamic9', 'chart10')
+                create_chart('Type of Post', a, df9, 'dynamic9', 'chart10', 'button9')
