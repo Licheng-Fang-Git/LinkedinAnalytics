@@ -420,7 +420,7 @@ if authentication_status:
 
         df = load_data()
 
-        if analysis_option == "TF-IDF Similarity Clustering":
+       if analysis_option == "TF-IDF Similarity Clustering":
             st.title("Detect Similar Posts Using TF-IDF")
 
             # Ensure 'Content' column exists
@@ -447,25 +447,25 @@ if authentication_status:
 
                 st.subheader(f"Posts with Similarity > {threshold}")
                 st.write(similar_df)
-                print(df.iloc[68]['Year'])
-                # Optionally show the actual text
+
                 for _, row in similar_df.head(5).iterrows():
                     idx_a = row['Post A']
                     idx_b = row['Post B']
                     st.markdown(f"**Pair {idx_a} & {idx_b}:**")
-
+                  
                     st.text(f"Post A: {contents.iloc[idx_a]}")
                     a_similar_data = {
-                        "Date Posted" : df.iloc[idx_a]['Created date'],
-                        "Impressions" : df.iloc[idx_a]['Impressions'],
+                        "Date Posted" : str(df.iloc[idx_a]['Created date'])[:10],
+                        "Impressions" : str(df.iloc[idx_a]['Impressions']),
                         "Day of Week" : df.iloc[idx_a]['Day of the week'],
                         "Time of Post": df.iloc[idx_a]['Interval Times']
                     }
                     st.dataframe(a_similar_data)
+
                     st.text(f"Post B: {contents.iloc[idx_b]}")
                     b_similar_data = {
-                        "Date Posted" : df.iloc[idx_b]['Created date'],
-                        "Impressions" : df.iloc[idx_b]['Impressions'],
+                        "Date Posted" : str(df.iloc[idx_b]['Created date'])[:10],
+                        "Impressions" : str(df.iloc[idx_b]['Impressions']),
                         "Day of Week" : df.iloc[idx_b]['Day of the week'],
                         "Time of Post": df.iloc[idx_b]['Interval Times']
                     }
