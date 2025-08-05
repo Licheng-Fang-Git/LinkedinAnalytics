@@ -438,7 +438,7 @@ if authentication_status:
                 cos_sim = cosine_similarity(tfidf_matrix)
 
                 # Flag similar pairs above threshold
-                threshold = 0.5
+                threshold = 0.4
                 similar_pairs = np.argwhere((cos_sim > threshold) & (cos_sim < 1.0))
                 similar_df = pd.DataFrame(similar_pairs, columns=['Post A', 'Post B'])
 
