@@ -420,7 +420,7 @@ if authentication_status:
 
         df = load_data()
 
-       if analysis_option == "TF-IDF Similarity Clustering":
+        if analysis_option == "TF-IDF Similarity Clustering":
             st.title("Detect Similar Posts Using TF-IDF")
 
             # Ensure 'Content' column exists
