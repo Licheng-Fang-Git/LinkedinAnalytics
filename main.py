@@ -8,6 +8,8 @@ from streamlit import session_state, sidebar
 import pickle
 from pathlib import Path
 import streamlit_authenticator
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 st.set_page_config(page_title="LinkedIn Analytics!!", page_icon="📈", layout='wide')
