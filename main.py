@@ -448,7 +448,7 @@ if authentication_status:
                 st.subheader(f"Posts with Similarity > {threshold}")
                 st.write(similar_df)
 
-                for _, row in similar_df.head(5).iterrows():
+                for _, row in similar_df.iterrows():
                     idx_a = row['Post A']
                     idx_b = row['Post B']
                     st.markdown(f"**Pair {idx_a} & {idx_b}:**")
