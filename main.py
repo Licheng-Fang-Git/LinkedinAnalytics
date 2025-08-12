@@ -22,8 +22,12 @@ usernames = ['ttrading']
 # -- Load Data --
 file_path = Path(__file__).parent / "hash_pw.pl"
 
-with file_path.open('rb') as file:
-    hashed_passwords = pickle.load(file)
+# with file_path.open('rb') as file:
+#     hashed_passwords = pickle.load(file)
+#     print(hashed_passwords)
+
+with open(file_path, 'rb') as file:
+    hashed_passwords = pickle.load(file, encoding='latin1')
 
 credentials = {
     'usernames': {
@@ -279,7 +283,7 @@ if authentication_status:
             st.write(f'Deleted Rows {deleted}')
 
         @st.fragment
-        def show_edit_chart(edit_frame, main_category, category_select, aggregate, all_data, dynamic_key, chart_key):
+        def show_edit_chart(edit_frame, main_category, category_select, aggregate, all_data, dynamic_key, chart_key, b_key):
             edit_posts = st.data_editor(
                 edit_frame,
                 key=dynamic_key,
@@ -294,14 +298,14 @@ if authentication_status:
                 if value == category_select:
                     all_data[aggregate][idx] = new_agg
             st.write(new_agg)
-            if st.button("Show Edits"):
+            if st.button("Show Edits", key=b_key):
                 fig_plot = px.bar(all_data, x=main_category, y=aggregate, template='seaborn', color=main_category)
                 st.plotly_chart(fig_plot, use_container_width=True, height=200, key=chart_key)
 
                 st.dataframe(all_data)
 
 
-        def create_chart(category, aggregate, dataframe, dynamic_key, chart_key):
+        def create_chart(category, aggregate, dataframe, dynamic_key, chart_key, b_key):
 
             st.subheader(f"{category} {aggregate} Chart")
             group_keys = list(dataframe.groupby(category).groups.keys())
@@ -354,55 +358,55 @@ if authentication_status:
                                 'Created date'].dt.date),
                     }
                     st.dataframe(post_data)
-                    show_edit_chart(post_data, category, selected_bar['selection']['points'][0]["x"], aggregate, data, dynamic_key, chart_key)
+                    show_edit_chart(post_data, category, selected_bar['selection']['points'][0]["x"], aggregate, data, dynamic_key, chart_key, b_key)
 
 
         if year:
             st.subheader(f"Year's Bar Chart")
             for a in agg:
-                create_chart('Year', a, df2, 'dynamic2', 'chart3')
+                create_chart('Year', a, df2, 'dynamic2', 'chart3', 'b2')
             st.divider()
 
         if month:
             st.subheader(f"Month's Bar Chart")
             for a in agg:
-                create_chart('Month & Year', a, df3, 'dynamic3', 'chart4')
+                create_chart('Month & Year', a, df3, 'dynamic3', 'chart4', 'b3')
             st.divider()
 
         if day:
             st.subheader(f"Day Bar Chart")
             for a in agg:
-                create_chart('Day of the week', a, df4, 'dynamic4', 'chart5')
+                create_chart('Day of the week', a, df4, 'dynamic4', 'chart5', 'b4')
             st.divider()
 
         if time:
             st.subheader(f"Time of Post Chart")
             for a in agg:
-                create_chart('Interval Times', a, df5, 'dynamic5', 'chart6')
+                create_chart('Interval Times', a, df5, 'dynamic5', 'chart6', 'b5')
             st.divider()
 
         if category:
             st.subheader(f"Category Chart")
             for a in agg:
-                create_chart('Category', a, df6, 'dynamic6', 'chart7')
+                create_chart('Category', a, df6, 'dynamic6', 'chart7', 'b6')
             st.divider()
 
         if sub_category:
             st.subheader(f"Sub-Category Chart")
             for a in agg:
-                create_chart('Sub-Category', a, df7, 'dynamic7', 'chart8')
+                create_chart('Sub-Category', a, df7, 'dynamic7', 'chart8', 'b7')
             st.divider()
 
         if emoji:
             st.subheader(f"Emoji Chart")
             for a in agg:
-                create_chart('Type Emoji', a, df8, 'dynamic8', 'chart9')
+                create_chart('Type Emoji', a, df8, 'dynamic8', 'chart9', 'b8')
             st.divider()
 
         if type_post:
             st.subheader(f"Type Post Chart")
             for a in agg:
-                create_chart('Type of Post', a, df9, 'dynamic9', 'chart10')
+                create_chart('Type of Post', a, df9, 'dynamic9', 'chart10', 'b9')
     with tab3:
         # Sidebar option
         st.sidebar.title("Analysis Options")
@@ -438,7 +442,7 @@ if authentication_status:
                 cos_sim = cosine_similarity(tfidf_matrix)
 
                 # Flag similar pairs above threshold
-                threshold = 0.7
+                threshold = 0.5
                 similar_pairs = np.argwhere((cos_sim > threshold) & (cos_sim < 1.0))
                 similar_df = pd.DataFrame(similar_pairs, columns=['Post A', 'Post B'])
 
@@ -447,25 +451,25 @@ if authentication_status:
 
                 st.subheader(f"Posts with Similarity > {threshold}")
                 st.write(similar_df)
-
-                for _, row in similar_df.iterrows():
+                print(df.iloc[68]['Year'])
+                # Optionally show the actual text
+                for _, row in similar_df.head(5).iterrows():
                     idx_a = row['Post A']
                     idx_b = row['Post B']
                     st.markdown(f"**Pair {idx_a} & {idx_b}:**")
-                  
+
                     st.text(f"Post A: {contents.iloc[idx_a]}")
                     a_similar_data = {
-                        "Date Posted" : str(df.iloc[idx_a]['Created date'])[:10],
-                        "Impressions" : str(df.iloc[idx_a]['Impressions']),
+                        "Date Posted" : df.iloc[idx_a]['Created date'],
+                        "Impressions" : df.iloc[idx_a]['Impressions'],
                         "Day of Week" : df.iloc[idx_a]['Day of the week'],
                         "Time of Post": df.iloc[idx_a]['Interval Times']
                     }
                     st.dataframe(a_similar_data)
-
                     st.text(f"Post B: {contents.iloc[idx_b]}")
                     b_similar_data = {
-                        "Date Posted" : str(df.iloc[idx_b]['Created date'])[:10],
-                        "Impressions" : str(df.iloc[idx_b]['Impressions']),
+                        "Date Posted" : df.iloc[idx_b]['Created date'],
+                        "Impressions" : df.iloc[idx_b]['Impressions'],
                         "Day of Week" : df.iloc[idx_b]['Day of the week'],
                         "Time of Post": df.iloc[idx_b]['Interval Times']
                     }
