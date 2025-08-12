@@ -5,3 +5,5 @@ plotly==6.2.0
 streamlit-authenticator==0.3.3
 pyarrow==21.0.0
 scikit-learn==1.7.1
+seaborn==0.13.2
+matplotlib==3.9.2
