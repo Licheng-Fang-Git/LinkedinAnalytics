@@ -10,7 +10,7 @@ from pathlib import Path
 import streamlit_authenticator
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-
+import seaborn as sns
 
 st.set_page_config(page_title="LinkedIn Analytics!!", page_icon="📈", layout='wide')
 
@@ -70,7 +70,7 @@ if authentication_status:
     st.title("📈 Linkedin Analytics")
     st.markdown('<style>div.block-container{padding-top:2rem;} </style>', unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["Default Information", "Filtered Data", "Compare Data"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Default Information", "Filtered Data", "Compare Data",  'Multi Variant Graphs'])
 
     df = pd.read_csv(content_csv_url)
     follower_df = pd.read_csv(follower_csv_url)
@@ -407,6 +407,7 @@ if authentication_status:
             st.subheader(f"Type Post Chart")
             for a in agg:
                 create_chart('Type of Post', a, df9, 'dynamic9', 'chart10', 'b9')
+                
     with tab3:
         # Sidebar option
         st.sidebar.title("Analysis Options")
@@ -474,3 +475,77 @@ if authentication_status:
                         "Time of Post": df.iloc[idx_b]['Interval Times']
                     }
                     st.dataframe(b_similar_data)
+                    
+    with tab4:
+        st.subheader(f"Analysis Options")
+        x = ['Category', 'Sub-Category', 'Year', 'Month', 'Day of the week', 'Interval Times', 'Emoji', 'Type of Post', 'Likes', "Comments", 'Clicks']
+        categorical = ['Category', 'Sub-Category', 'Year', 'Month', 'Day of the week', 'Interval Times', 'Emoji', 'Type of Post']
+        x_val = st.multiselect("Pick the Independent Variable", x)
+        y = ['Impressions']
+        y_val = st.multiselect(f'Dependent Variable Y', y)
+        categorical_val = st.multiselect('Hue by:',categorical)
+        st.divider()
+
+        if categorical_val and x_val:
+            categorical_val = categorical_val[0]
+            x_val = x_val[0]
+            y_val = y_val[0]
+
+            if categorical_val =='Interval Times' or x_val =='Interval Times' :
+                def time_to_hours(t):
+                    return pd.to_datetime(t, format="%I:%M %p").hour + pd.to_datetime(t, format="%I:%M %p").minute / 60
+
+                df['Interval Times'] = df['Interval Times'].apply(time_to_hours)
+
+            multi_variant_graphs = ['Heatmap', 'Box plot', 'Reg plot', 'Bar plot', 'Lm plot' ]
+            selected_graph = st.multiselect("Select Multi variant graph", multi_variant_graphs)
+            certain_categorical_val = st.multiselect("Certain Categorical Variable", df[categorical_val].unique())
+            if certain_categorical_val:
+                certain_categorical_val = certain_categorical_val[0]
+                df12 = df.copy()
+                df12 = df12[df12[categorical_val] == certain_categorical_val]
+            else:
+                df12 = df.copy()
+
+            if selected_graph:
+                if 'Heatmap' in selected_graph:
+                    st.subheader("Heatmap")
+                    fig, ax = plt.subplots(figsize=(15,8))
+                    heatmap_data = df12.groupby([categorical_val,x_val])[y_val].mean().unstack()
+                    sns.heatmap(heatmap_data, annot=True, fmt='.0f', cmap='YlGnBu', ax=ax)
+                    st.pyplot(fig)
+                    note = st.text_area("Write your note here:", key="note1")
+
+                if 'Box plot' in selected_graph:
+                    st.subheader("Box plot")
+                    fig, ax = plt.subplots(figsize=(15,8))
+                    sns.boxplot(data=df12, x=x_val, y=y_val, hue=categorical_val, palette='Set2')
+                    st.pyplot(fig)
+                    note2 = st.text_area("Write your note here:", key="note2")
+
+                if 'Bar plot' in selected_graph:
+                    st.subheader("Bar plot")
+                    fig, ax = plt.subplots(figsize=(15,8))
+                    sns.barplot(data=df12, x=x_val, y=y_val, hue=categorical_val, palette='Set2')
+                    st.pyplot(fig)
+                    note3 = st.text_area("Write your note here:", key="note3")
+
+                if 'Lm plot' in selected_graph:
+                    st.subheader("Lm plot")
+                    lm = sns.lmplot(
+                        data=df12,
+                        x=x_val,
+                        y=y_val,
+                        hue=categorical_val,
+                        palette='Set2',
+                        height=8, aspect=1  # Controls size, similar to figsize
+                    )
+                    st.pyplot(lm.fig)  # Access the underlying Matplotlib figure
+                    note4 = st.text_area("Write your note here:", key="note5")
+
+                if 'Reg plot' in selected_graph:
+                    st.subheader("Reg plot")
+                    fig, ax = plt.subplots(figsize=(15,8))
+                    sns.regplot(data=df, x= x_val, y=y_val)
+                    st.pyplot(fig)
+                    note4 = st.text_area("Write your note here:", key="note4")
